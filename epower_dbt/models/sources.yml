@@ -1,0 +1,24 @@
+version: 2
+
+sources:
+  - name: epower_bronze
+    database: EPOWER_DEMO
+    schema: EPOWER_BRONZE
+    tables:
+      - name: epulse_devices
+        description: Device registry linking existing customers to IoT gateways
+      - name: raw_epulse_iot_telemetry
+        description: Raw IoT gateway telemetry from ePulse devices
+      - name: raw_day_ahead_prices
+        description: Raw day-ahead electricity prices from Energy-Charts API (DE-LU)
+
+  - name: epower_gold
+    database: EPOWER_DEMO
+    schema: EPOWER_GOLD
+    tables:
+      - name: customer_dim
+        description: Existing EPOWER customer dimension (20K customers)
+      - name: customer_products
+        description: Existing customer product ownership data
+      - name: product_dim
+        description: Existing product dimension

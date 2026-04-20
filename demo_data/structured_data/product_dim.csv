@@ -1,0 +1,16 @@
+product_key,product_name,category_key,category_name,vertical,capex_eur,opex_eur_year
+1,EPOWER Strom Basis,1,Electricity,Energy,0.0,1091.83
+2,EPOWER Strom Plus,1,Electricity,Energy,0.0,1207.5
+3,EPOWER Ökostrom 100%,1,Electricity,Energy,0.0,1510.01
+4,EPOWER Gas Basis,2,Gas,Energy,0.0,1333.93
+5,EPOWER Gas Plus,2,Gas,Energy,0.0,2241.88
+6,EPOWER Solar S 5kWp,3,Solar & Storage,Future Energy,14706.8,378.44
+7,EPOWER Solar M 8kWp,3,Solar & Storage,Future Energy,16521.63,384.38
+8,EPOWER Solar L 12kWp + Speicher 10kWh,3,Solar & Storage,Future Energy,24178.78,443.73
+9,EPOWER Wärmepumpe Luft-Wasser,4,Heat Pumps,Future Energy,21032.13,607.96
+10,EPOWER Wärmepumpe Sole-Wasser,4,Heat Pumps,Future Energy,29391.86,594.97
+11,EPOWER Smart Meter,5,Smart Home,Smart Home,0.0,0.0
+12,EPOWER Home Energy Manager,5,Smart Home,Smart Home,507.99,73.23
+13,EPOWER Wallbox 11kW,6,E-Mobility,E-Mobility,1694.63,0.0
+14,EPOWER Wallbox 22kW,6,E-Mobility,E-Mobility,2847.54,0.0
+15,EPOWER Autostrom Tarif,6,E-Mobility,E-Mobility,0.0,603.9

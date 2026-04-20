@@ -1,0 +1,26 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.py[cod]
+.env
+.venv/
+venv/
+
+# Credentials
+*.pem
+*.key
+credentials.json
+
+# dbt artifacts (generated at runtime)
+epower_dbt/target/
+epower_dbt/dbt_packages/
+epower_dbt/logs/

@@ -1,0 +1,20 @@
+version: 2
+
+models:
+  - name: mart_day_ahead_prices
+    description: Day-ahead electricity market prices enriched with time dimensions
+    columns:
+      - name: start_time
+        description: Start of price interval
+        tests:
+          - not_null
+      - name: price_eur_mwh
+        description: Day-ahead spot price in EUR/MWh
+        tests:
+          - not_null
+      - name: price_eur_kwh
+        description: Day-ahead spot price in EUR/kWh
+      - name: hour_of_day
+        description: Hour of day (0-23) for time-of-day analysis
+      - name: day_of_week
+        description: Day of week for weekly pattern analysis

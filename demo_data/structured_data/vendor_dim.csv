@@ -1,0 +1,201 @@
+vendor_key,vendor_name,vendor_type,vertical,address,city,state,zip
+1,Plath Smart UG,Lieferant,Energy,SchillerGasse 27,Leipzig,East,04534
+2,Weller Solar e.K.,E-Mobility Partner,E-Mobility,MozartAllee 17,Dortmund,West,44597
+3,Oestrovsky Smart UG,Lieferant,Energy,TalPlatz 16,Halle,East,06668
+4,Haering Power GmbH,Lieferant,Energy,RosenWeg 107,Regensburg,South,93948
+5,Etzler Tech GmbH,E-Mobility Partner,E-Mobility,SonnenRing 147,Duisburg,West,47631
+6,Rust Power AG,E-Mobility Partner,E-Mobility,SchulPlatz 74,Magdeburg,East,39895
+7,Zänker Solar e.K.,Smart Home Partner,Smart Home,GoetheWeg 141,Ulm,South,89406
+8,Metz Wärme e.K.,Installateur,Future Energy,EichenStraße 32,München,South,80804
+9,Jopich Smart GmbH,E-Mobility Partner,E-Mobility,BahnhofRing 32,Jena,East,07125
+10,Pergande Eco AG,Wartungspartner,Future Energy,TannenGasse 29,Berlin,East,10874
+11,Heydrich Service e.K.,Wartungspartner,Future Energy,BlumenAllee 139,Köln,West,50765
+12,Wernecke Elektro KG,Lieferant,Energy,SeeGasse 88,Osnabrück,North,49331
+13,Käster Haustechnik AG,Installateur,Future Energy,BlumenStraße 84,Erfurt,East,99966
+14,Loos Solar GmbH,Installateur,Future Energy,BeethovenRing 10,Stuttgart,South,70605
+15,Faust Haustechnik KG,Lieferant,Energy,BahnhofGasse 9,Lübeck,North,23596
+16,Mühle Eco UG,Installateur,Future Energy,MozartRing 47,Potsdam,East,14400
+17,Döring Klima KG,E-Mobility Partner,E-Mobility,SeeStraße 149,Dresden,East,01370
+18,Seifert Haustechnik GmbH,Smart Home Partner,Smart Home,SchulStraße 39,Wolfsburg,North,38699
+19,Grein Groth Smart AG,E-Mobility Partner,E-Mobility,BlumenPlatz 124,Potsdam,East,14780
+20,Mohaupt Klima e.K.,Lieferant,Energy,WaldStraße 30,Münster,West,48235
+21,Bloch Elektro GmbH,Lieferant,Energy,BlumenGasse 54,Stuttgart,South,70970
+22,Schomber Elektro AG,Smart Home Partner,Smart Home,WaldGasse 94,Köln,West,50319
+23,Fechner Solar UG,Wartungspartner,Future Energy,SternPlatz 91,Münster,West,48171
+24,Heser Smart GmbH,Installateur,Future Energy,MozartStraße 5,Magdeburg,East,39318
+25,Jacob Power KG,Wartungspartner,Future Energy,MarktWeg 85,Ulm,South,89198
+26,Krein Haustechnik e.K.,Wartungspartner,Future Energy,WiesenRing 123,Stuttgart,South,70519
+27,Schmidt Energie e.K.,Smart Home Partner,Smart Home,BrunnenRing 27,Bochum,West,44996
+28,Pruschke Eco KG,Lieferant,Energy,SchulAllee 116,Düsseldorf,West,40546
+29,Hofmann Eco UG,Installateur,Future Energy,ParkAllee 131,Leipzig,East,04501
+30,Keudel Energie AG,E-Mobility Partner,E-Mobility,BahnhofRing 126,Bochum,West,44921
+31,Rose Wärme GmbH,Wartungspartner,Future Energy,TalPlatz 56,Jena,East,07497
+32,Riehl Klima UG,Smart Home Partner,Smart Home,SchulPlatz 139,Osnabrück,North,49210
+33,Schmiedecke Elektro UG,Wartungspartner,Future Energy,BahnhofGasse 27,Braunschweig,North,38995
+34,van der Dussen Tech UG,Smart Home Partner,Smart Home,GoetheRing 8,Magdeburg,East,39868
+35,Baum Green KG,Lieferant,Energy,HauptGasse 141,Nürnberg,South,90448
+36,Schleich Power AG,Wartungspartner,Future Energy,GoetheWeg 134,Erfurt,East,99657
+37,Bolander Eco UG,Lieferant,Energy,GoetheStraße 100,Rostock,North,18450
+38,Kramer Tech AG,E-Mobility Partner,E-Mobility,BrunnenWeg 27,Bonn,West,53249
+39,Kuhl Service GmbH,Lieferant,Energy,RosenGasse 87,Braunschweig,North,38638
+40,Baum Wärme AG,Smart Home Partner,Smart Home,TalWeg 37,Jena,East,07275
+41,Ruppersberger Haustechnik GmbH,E-Mobility Partner,E-Mobility,HeideWeg 1,München,South,80517
+42,Huhn Klima AG,Installateur,Future Energy,MondStraße 84,Berlin,East,10644
+43,Mosemann Klima KG,E-Mobility Partner,E-Mobility,RathausWeg 61,Hannover,North,30103
+44,Pruschke Wärme GmbH,Wartungspartner,Future Energy,MondPlatz 122,Ulm,South,89194
+45,Gumprich Wärme UG,Wartungspartner,Future Energy,HeideAllee 67,Halle,East,06522
+46,Bloch Eco GmbH,E-Mobility Partner,E-Mobility,SternGasse 53,Ingolstadt,South,85764
+47,Lindau Tech UG,Installateur,Future Energy,RosenRing 20,Würzburg,South,97816
+48,Finke Smart GmbH,Smart Home Partner,Smart Home,TalGasse 79,Kiel,North,24717
+49,Löffler Power UG,Installateur,Future Energy,BergRing 119,Rostock,North,18647
+50,Hoffmann Power UG,Wartungspartner,Future Energy,SonnenPlatz 14,Stuttgart,South,70378
+51,Lachmann Tech UG,E-Mobility Partner,E-Mobility,KirchGasse 54,Potsdam,East,14620
+52,Tschentscher Power KG,Lieferant,Energy,HauptWeg 47,München,South,80811
+53,Kabus Green AG,Wartungspartner,Future Energy,SonnenStraße 10,Oldenburg,North,26565
+54,Paffrath Solar e.K.,Lieferant,Energy,SternPlatz 110,Osnabrück,North,49590
+55,Reichmann Green GmbH,Smart Home Partner,Smart Home,EichenRing 127,Bremen,North,28132
+56,Rosemann Solar KG,Wartungspartner,Future Energy,HeideStraße 61,Cottbus,East,03411
+57,Schäfer Eco AG,E-Mobility Partner,E-Mobility,BrunnenPlatz 149,München,South,80218
+58,Röhrdanz Haustechnik e.K.,Wartungspartner,Future Energy,LindenWeg 15,Augsburg,South,86512
+59,Ortmann Tech AG,Lieferant,Energy,LindenAllee 43,Lübeck,North,23589
+60,Gierschner Solar e.K.,Lieferant,Energy,ParkAllee 135,Wolfsburg,North,38475
+61,Heuser Wärme AG,Lieferant,Energy,BeethovenRing 21,Düsseldorf,West,40619
+62,Heuser Solar AG,Installateur,Future Energy,BergPlatz 143,Rostock,North,18790
+63,Werner Service UG,Lieferant,Energy,GoetheAllee 23,Jena,East,07107
+64,Jacob Power AG,Installateur,Future Energy,HeideStraße 66,Rostock,North,18274
+65,Krebs Smart KG,Lieferant,Energy,KirchPlatz 132,Halle,East,06770
+66,Henk Haustechnik KG,Lieferant,Energy,HauptStraße 149,Magdeburg,East,39569
+67,Carsten Green GmbH,Smart Home Partner,Smart Home,HauptRing 119,Leipzig,East,04412
+68,Faust Elektro KG,Lieferant,Energy,SchulStraße 106,Jena,East,07342
+69,Vogt Smart AG,Wartungspartner,Future Energy,SchulPlatz 101,Berlin,East,10811
+70,Radisch Wärme AG,Smart Home Partner,Smart Home,HeideRing 134,Wuppertal,West,42598
+71,Stolze Eco KG,Smart Home Partner,Smart Home,BeethovenWeg 65,Magdeburg,East,39917
+72,Holt Green UG,Installateur,Future Energy,RosenWeg 80,Dresden,East,01676
+73,Etzold Wärme e.K.,Wartungspartner,Future Energy,SchulRing 119,Wolfsburg,North,38730
+74,Striebitz Eco AG,E-Mobility Partner,E-Mobility,SternAllee 78,Berlin,East,10878
+75,Berger Klima AG,Smart Home Partner,Smart Home,KirchWeg 38,Münster,West,48471
+76,Sager Eco KG,Wartungspartner,Future Energy,WaldPlatz 16,Lübeck,North,23911
+77,Gerlach Smart e.K.,Lieferant,Energy,EichenPlatz 81,Hannover,North,30825
+78,Mielcarek Energie UG,E-Mobility Partner,E-Mobility,ParkGasse 17,Braunschweig,North,38338
+79,Jäkel Energie UG,Wartungspartner,Future Energy,BirkenWeg 13,Magdeburg,East,39681
+80,Sauer Green GmbH,Wartungspartner,Future Energy,KirchWeg 73,Rostock,North,18553
+81,Henschel Energie e.K.,E-Mobility Partner,E-Mobility,TannenAllee 35,Essen,West,45392
+82,Stolze Solar UG,Smart Home Partner,Smart Home,GoetheStraße 5,Dortmund,West,44700
+83,Rosenow Green AG,E-Mobility Partner,E-Mobility,GoetheGasse 31,Aachen,West,52794
+84,Beyer Smart KG,Smart Home Partner,Smart Home,SonnenWeg 102,Regensburg,South,93497
+85,Schacht Haustechnik UG,Installateur,Future Energy,BeethovenPlatz 143,Hamburg,North,20886
+86,Plath Haustechnik GmbH,Smart Home Partner,Smart Home,RathausStraße 117,Magdeburg,East,39802
+87,Davids Smart KG,Installateur,Future Energy,MarktPlatz 132,Regensburg,South,93198
+88,Stolze Klima UG,Lieferant,Energy,TalStraße 70,Regensburg,South,93590
+89,Budig Energie KG,Installateur,Future Energy,KirchGasse 67,Ingolstadt,South,85357
+90,Fechner Energie UG,Lieferant,Energy,TalStraße 137,Nürnberg,South,90161
+91,Etzler Service KG,Installateur,Future Energy,LindenGasse 138,Aachen,West,52893
+92,Bender Wärme GmbH,Installateur,Future Energy,SonnenStraße 111,Braunschweig,North,38241
+93,Gnatz Eco UG,Installateur,Future Energy,EichenRing 26,Karlsruhe,South,76277
+94,Weitzel Solar AG,Wartungspartner,Future Energy,SeeRing 110,Hamburg,North,20425
+95,Briemer Tech e.K.,Lieferant,Energy,TannenGasse 59,Nürnberg,South,90831
+96,Karge Haustechnik GmbH,Wartungspartner,Future Energy,SchillerGasse 72,Stuttgart,South,70669
+97,Sölzer Klima UG,Installateur,Future Energy,RathausAllee 54,Augsburg,South,86365
+98,Dietz Tech AG,Wartungspartner,Future Energy,SchillerGasse 70,Braunschweig,North,38718
+99,Etzler Energie KG,E-Mobility Partner,E-Mobility,GoetheRing 114,Bonn,West,53209
+100,Seidel Eco UG,Installateur,Future Energy,BergRing 105,Würzburg,South,97720
+101,Stolze Service e.K.,Wartungspartner,Future Energy,KirchStraße 83,München,South,80316
+102,Patberg Green AG,Installateur,Future Energy,MozartGasse 106,Regensburg,South,93932
+103,Klapp Power e.K.,Lieferant,Energy,SternRing 108,Karlsruhe,South,76438
+104,Budig Haustechnik e.K.,Smart Home Partner,Smart Home,MozartPlatz 111,Braunschweig,North,38238
+105,Häring Green UG,E-Mobility Partner,E-Mobility,HauptWeg 48,Bonn,West,53748
+106,Kraus Smart GmbH,E-Mobility Partner,E-Mobility,MarktPlatz 150,Bremen,North,28379
+107,Pechel Tech KG,E-Mobility Partner,E-Mobility,WaldRing 65,Hamburg,North,20315
+108,Holsten Eco AG,Wartungspartner,Future Energy,BeethovenGasse 39,Würzburg,South,97869
+109,Beckmann Solar AG,Installateur,Future Energy,SchulRing 123,Kiel,North,24369
+110,Junk Service KG,Lieferant,Energy,BergWeg 129,Lübeck,North,23149
+111,Hoffmann Haustechnik KG,E-Mobility Partner,E-Mobility,GoetheStraße 75,Potsdam,East,14303
+112,Dörr Power KG,E-Mobility Partner,E-Mobility,SchillerRing 66,Erfurt,East,99357
+113,Trubin Wärme GmbH,Wartungspartner,Future Energy,RathausWeg 7,Bonn,West,53399
+114,Kraushaar Power e.K.,Wartungspartner,Future Energy,GoethePlatz 133,Erfurt,East,99525
+115,Staude Tech KG,Lieferant,Energy,BergStraße 90,Köln,West,50558
+116,Kabus Green KG,Smart Home Partner,Smart Home,BlumenGasse 122,Dresden,East,01674
+117,Gehringer Energie UG,Installateur,Future Energy,SchulAllee 14,Duisburg,West,47821
+118,Hein Tech UG,Installateur,Future Energy,SonnenWeg 106,Berlin,East,10877
+119,Niemeier Tech AG,Wartungspartner,Future Energy,EichenAllee 41,Ulm,South,89466
+120,Anders Eco e.K.,Wartungspartner,Future Energy,MozartPlatz 103,Düsseldorf,West,40501
+121,Ackermann Klima KG,E-Mobility Partner,E-Mobility,BergAllee 94,Bonn,West,53783
+122,Wilms Smart GmbH,Installateur,Future Energy,EichenPlatz 55,München,South,80336
+123,Renner Smart KG,E-Mobility Partner,E-Mobility,SchulPlatz 1,Oldenburg,North,26563
+124,Mentzel Power e.K.,Wartungspartner,Future Energy,MarktRing 73,Jena,East,07513
+125,Ortmann Wärme AG,Lieferant,Energy,BeethovenStraße 93,Düsseldorf,West,40576
+126,Mülichen Eco e.K.,Wartungspartner,Future Energy,MozartRing 58,Münster,West,48464
+127,Köhler Energie UG,Installateur,Future Energy,SchulWeg 145,Ingolstadt,South,85271
+128,Buchholz Elektro GmbH,Lieferant,Energy,BlumenGasse 116,Freiburg,South,79173
+129,Schmiedecke Service KG,E-Mobility Partner,E-Mobility,EichenPlatz 65,Braunschweig,North,38887
+130,Bloch Eco e.K.,Installateur,Future Energy,SternAllee 24,Dortmund,West,44924
+131,Weitzel Elektro e.K.,Lieferant,Energy,SonnenGasse 8,Erfurt,East,99808
+132,Bien Elektro UG,Installateur,Future Energy,MarktWeg 95,Bremen,North,28976
+133,Haering Tech KG,E-Mobility Partner,E-Mobility,SchulStraße 88,Hamburg,North,20101
+134,Gierschner Energie GmbH,Smart Home Partner,Smart Home,MondPlatz 148,Duisburg,West,47134
+135,Freudenberger Tech AG,Smart Home Partner,Smart Home,GoethePlatz 127,Ulm,South,89226
+136,van der Dussen Eco e.K.,Smart Home Partner,Smart Home,SternPlatz 1,Chemnitz,East,09373
+137,Losekann Haustechnik AG,E-Mobility Partner,E-Mobility,GoetheStraße 77,Leipzig,East,04244
+138,Bauer Service KG,Lieferant,Energy,GoetheGasse 41,Ulm,South,89741
+139,Mülichen Green AG,Smart Home Partner,Smart Home,BirkenPlatz 3,München,South,80304
+140,Hendriks Elektro KG,E-Mobility Partner,E-Mobility,SonnenAllee 64,Erfurt,East,99415
+141,Hörle Service GmbH,Installateur,Future Energy,BeethovenPlatz 30,Ingolstadt,South,85409
+142,Wesack Green KG,Smart Home Partner,Smart Home,BergRing 30,Halle,East,06849
+143,Mitschke Green GmbH,Wartungspartner,Future Energy,BlumenRing 41,Hamburg,North,20929
+144,Pechel Power AG,Wartungspartner,Future Energy,SternRing 1,Duisburg,West,47187
+145,Weinhold Tech KG,E-Mobility Partner,E-Mobility,RathausPlatz 25,Berlin,East,10204
+146,Hörle Green GmbH,Lieferant,Energy,HeideWeg 98,Oldenburg,North,26101
+147,Henck Smart GmbH,Installateur,Future Energy,ParkPlatz 118,Leipzig,East,04953
+148,Fritsch Solar KG,Installateur,Future Energy,EichenGasse 32,Jena,East,07804
+149,Loos Smart KG,Smart Home Partner,Smart Home,BirkenStraße 101,Freiburg,South,79812
+150,Mosemann Eco GmbH,Lieferant,Energy,RathausAllee 148,Nürnberg,South,90541
+151,Hertrampf Service AG,Smart Home Partner,Smart Home,SternPlatz 125,Rostock,North,18160
+152,Reichmann Solar UG,Smart Home Partner,Smart Home,MarktAllee 36,Bonn,West,53304
+153,Jessel Tech KG,Lieferant,Energy,EichenAllee 131,Regensburg,South,93854
+154,Löchel Elektro AG,Lieferant,Energy,BirkenStraße 95,Chemnitz,East,09277
+155,Heydrich Power GmbH,Installateur,Future Energy,RosenStraße 129,Münster,West,48638
+156,Schuster Eco AG,Wartungspartner,Future Energy,HauptGasse 104,Münster,West,48203
+157,Hartmann Elektro AG,Installateur,Future Energy,BrunnenGasse 50,Halle,East,06481
+158,Buchholz Wärme GmbH,Wartungspartner,Future Energy,MozartAllee 96,Braunschweig,North,38808
+159,Wulf Elektro KG,E-Mobility Partner,E-Mobility,BirkenAllee 38,Karlsruhe,South,76116
+160,Bolander Solar e.K.,E-Mobility Partner,E-Mobility,SternWeg 80,Wuppertal,West,42799
+161,Hänel Haustechnik e.K.,Installateur,Future Energy,ParkGasse 53,Chemnitz,East,09666
+162,Etzold Power e.K.,Lieferant,Energy,SeeGasse 18,Wuppertal,West,42362
+163,Harloff Power AG,Smart Home Partner,Smart Home,EichenStraße 2,Potsdam,East,14367
+164,Heinrich Energie AG,Smart Home Partner,Smart Home,WiesenStraße 104,Augsburg,South,86763
+165,Ring Smart KG,Smart Home Partner,Smart Home,SchulRing 42,Würzburg,South,97108
+166,Spieß Energie GmbH,Lieferant,Energy,EichenAllee 47,Würzburg,South,97534
+167,Klapp Power AG,Wartungspartner,Future Energy,BahnhofRing 43,Stuttgart,South,70631
+168,Hertrampf Haustechnik UG,Smart Home Partner,Smart Home,SchulGasse 33,Berlin,East,10262
+169,Henk Green AG,E-Mobility Partner,E-Mobility,BlumenPlatz 56,Würzburg,South,97396
+170,Matthäi Power KG,E-Mobility Partner,E-Mobility,BlumenStraße 70,Würzburg,South,97748
+171,Trubin Service UG,Smart Home Partner,Smart Home,KirchPlatz 27,Cottbus,East,03397
+172,Lübs Haustechnik UG,Lieferant,Energy,LindenStraße 116,Potsdam,East,14461
+173,Nerger Power AG,Installateur,Future Energy,GoethePlatz 141,Jena,East,07721
+174,Heinz Service KG,Wartungspartner,Future Energy,RathausWeg 148,Jena,East,07268
+175,Blümel Tech GmbH,Lieferant,Energy,SternWeg 133,Dortmund,West,44609
+176,Weinhold Service e.K.,Installateur,Future Energy,KirchPlatz 6,Düsseldorf,West,40622
+177,Klemm Solar KG,Installateur,Future Energy,TalStraße 57,Rostock,North,18221
+178,Rogge Power GmbH,E-Mobility Partner,E-Mobility,WiesenWeg 150,Regensburg,South,93610
+179,Karz Power AG,Wartungspartner,Future Energy,HauptWeg 103,Duisburg,West,47834
+180,Renner Elektro KG,E-Mobility Partner,E-Mobility,SternWeg 35,Ulm,South,89842
+181,Gertz Elektro GmbH,Installateur,Future Energy,TalPlatz 16,Aachen,West,52948
+182,Buchholz Tech KG,E-Mobility Partner,E-Mobility,SchillerWeg 26,Kiel,North,24268
+183,Scholl Solar GmbH,Lieferant,Energy,SeePlatz 146,München,South,80805
+184,Löchel Power KG,E-Mobility Partner,E-Mobility,SonnenWeg 40,Lübeck,North,23665
+185,Weimer Power UG,Lieferant,Energy,SonnenWeg 124,Würzburg,South,97126
+186,Holsten Energie GmbH,E-Mobility Partner,E-Mobility,RathausRing 123,Karlsruhe,South,76233
+187,Wiek Klima AG,Wartungspartner,Future Energy,BergPlatz 75,Berlin,East,10516
+188,Karge Tech AG,E-Mobility Partner,E-Mobility,SchulStraße 73,Stuttgart,South,70109
+189,Schleich Solar GmbH,Lieferant,Energy,MondWeg 141,Oldenburg,North,26116
+190,Schmidtke Service GmbH,E-Mobility Partner,E-Mobility,SchillerPlatz 125,Halle,East,06226
+191,Lindner Solar UG,E-Mobility Partner,E-Mobility,KirchAllee 52,Hamburg,North,20628
+192,Ritter Smart KG,Smart Home Partner,Smart Home,SchillerWeg 46,Ingolstadt,South,85861
+193,Fischer Elektro e.K.,Lieferant,Energy,BrunnenRing 113,Berlin,East,10927
+194,Etzler Tech KG,E-Mobility Partner,E-Mobility,KirchAllee 74,Freiburg,South,79894
+195,Hiller Elektro GmbH,Installateur,Future Energy,KirchGasse 128,Freiburg,South,79970
+196,Haering Smart AG,Lieferant,Energy,BergGasse 106,Essen,West,45394
+197,Davids Haustechnik UG,Wartungspartner,Future Energy,SchulStraße 49,Chemnitz,East,09886
+198,Ernst Klima UG,Wartungspartner,Future Energy,BrunnenWeg 44,Duisburg,West,47193
+199,Stiffel Eco AG,Installateur,Future Energy,WiesenRing 97,Leipzig,East,04835
+200,Stadelmann Green UG,Lieferant,Energy,LindenPlatz 142,Wolfsburg,North,38302

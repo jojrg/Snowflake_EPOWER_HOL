@@ -1,0 +1,59 @@
+version: 2
+
+models:
+  - name: mart_vpp_capacity_hourly
+    description: Hourly VPP capacity aggregation by region (AI-ready Gold layer)
+    columns:
+      - name: hour
+        description: Hour timestamp
+        tests:
+          - not_null
+      - name: region
+        description: German region (North, South, East, West)
+        tests:
+          - not_null
+      - name: active_vpp_devices
+        description: Count of active VPP devices in this hour/region
+      - name: total_battery_soc
+        description: Sum of battery state-of-charge percentages
+      - name: avg_battery_soc_pct
+        description: Average battery SoC percentage
+      - name: total_solar_yield_kw
+        description: Total solar generation in kW
+      - name: avg_solar_yield_kw
+        description: Average solar yield per device
+      - name: net_grid_kw
+        description: Net grid import/export (negative = export to grid)
+
+  - name: mart_vpp_price_optimization
+    description: >
+      VPP battery arbitrage analysis joining device telemetry with day-ahead electricity prices.
+      Inspired by 1KOMMA5° Heartbeat AI strategy: charge batteries during low/negative price hours,
+      discharge to grid during high-price hours. Revenue split 70% customer / 30% EPOWER.
+    columns:
+      - name: hour
+        description: Hour timestamp
+        tests:
+          - not_null
+      - name: customer_key
+        description: Customer identifier
+        tests:
+          - not_null
+      - name: price_zone
+        description: "Price classification: NEGATIVE, LOW, MEDIUM, HIGH, NO_PRICE_DATA"
+      - name: battery_action
+        description: "Strategy action: MAX_CHARGE, CHARGE, DISCHARGE, SELF_CONSUME"
+      - name: price_eur_mwh
+        description: Day-ahead price in EUR/MWh
+      - name: price_eur_kwh
+        description: Day-ahead price in EUR/kWh
+      - name: import_cost_eur
+        description: Cost of grid import for this hour
+      - name: export_revenue_eur
+        description: Revenue from grid export for this hour
+      - name: net_margin_eur
+        description: Net margin (export revenue - import cost)
+      - name: customer_margin_eur
+        description: Customer share of margin (70%)
+      - name: epower_margin_eur
+        description: EPOWER share of margin (30%)

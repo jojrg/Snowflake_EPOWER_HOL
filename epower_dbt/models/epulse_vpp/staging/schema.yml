@@ -1,0 +1,32 @@
+version: 2
+
+models:
+  - name: stg_devices
+    description: Device registry joined with existing customer_dim
+    columns:
+      - name: customer_key
+        description: Unique customer identifier (FK to EPOWER_GOLD.customer_dim)
+        tests:
+          - unique
+          - not_null
+      - name: gateway_id
+        description: IoT gateway identifier
+        tests:
+          - unique
+          - not_null
+      - name: is_vpp_enrolled
+        description: True if customer has battery AND enrolled in VPP (90% rule)
+        tests:
+          - not_null
+
+  - name: fct_epulse_telemetry
+    description: IoT telemetry joined with device and customer data
+    columns:
+      - name: customer_key
+        description: Customer identifier (FK to stg_devices)
+        tests:
+          - not_null
+      - name: gateway_id
+        description: IoT gateway identifier
+        tests:
+          - not_null

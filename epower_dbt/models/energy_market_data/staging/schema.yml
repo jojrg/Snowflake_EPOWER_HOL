@@ -1,0 +1,19 @@
+version: 2
+
+models:
+  - name: stg_day_ahead_prices
+    description: Day-ahead electricity prices flattened from Energy-Charts API JSON (incremental)
+    columns:
+      - name: start_time
+        description: Start of price interval (unique key)
+        tests:
+          - unique
+          - not_null
+      - name: end_time
+        description: End of price interval (start_time + 15 min)
+        tests:
+          - not_null
+      - name: price_eur_mwh
+        description: Day-ahead spot price in EUR/MWh
+        tests:
+          - not_null

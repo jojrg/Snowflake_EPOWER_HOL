@@ -1,0 +1,24 @@
+name: epower_analytics
+version: '1.0.0'
+
+profile: default
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+
+models:
+  epower_analytics:
+    epulse_vpp:
+      staging:
+        +schema: EPOWER_SILVER
+        +materialized: table
+      marts:
+        +schema: EPOWER_GOLD
+        +materialized: table
+    energy_market_data:
+      staging:
+        +schema: EPOWER_SILVER
+        +materialized: incremental
+      marts:
+        +schema: EPOWER_GOLD
+        +materialized: table
