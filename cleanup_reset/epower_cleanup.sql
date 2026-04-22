@@ -7,22 +7,11 @@ USE ROLE accountadmin;
 USE WAREHOUSE EPOWER_COMPUTE;
 
 -- ========================================================================
--- BACKUP RAW_DAY_AHEAD_PRICES (cannot be re-fetched from Energy-Charts API)
--- ========================================================================
-CREATE DATABASE IF NOT EXISTS TRANSFER_ENERGYCHARTS_DB;
-CREATE SCHEMA IF NOT EXISTS TRANSFER_ENERGYCHARTS_DB.PUBLIC;
-
-CREATE OR REPLACE TABLE TRANSFER_ENERGYCHARTS_DB.PUBLIC.RAW_DAY_AHEAD_PRICES_BACKUP AS
-    SELECT * FROM EPOWER_DEMO.EPOWER_BRONZE.RAW_DAY_AHEAD_PRICES;
-
-SELECT COUNT(*) AS backed_up_rows FROM TRANSFER_ENERGYCHARTS_DB.PUBLIC.RAW_DAY_AHEAD_PRICES_BACKUP;
-
--- ========================================================================
 -- REMOVE AGENT FROM SNOWFLAKE INTELLIGENCE
 -- ========================================================================
 BEGIN
     ALTER SNOWFLAKE INTELLIGENCE snowflake_intelligence_object_default 
-        DROP AGENT EPOWER_DEMO.EPOWER_GOLD.ENEXT_Agent;
+        DROP AGENT EPOWER_DEMO.EPOWER_GOLD.EPOWER_AGENT;
 EXCEPTION
     WHEN OTHER THEN NULL;
 END;
