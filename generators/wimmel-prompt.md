@@ -29,7 +29,7 @@ Top-left corner: **Wind turbines** and a **solar farm** in the background landsc
 
 Bottom-left: A **traditional customer** area:
 - Houses connected to the grid only (no solar, no battery)
-- A **power line / distribution grid** connecting them to the main grid
+- A **power line / distribution grid** connecting them to the main grid, but it should still look modern
 - Label: "Consumer — Grid Only"
 
 ## Right Side — The Business Operations

@@ -4,7 +4,7 @@
 
 **A hands-on lab for building an Agentic AI application grounded in enterprise data — powered by Snowflake.**
 
-This demo comes with a notebook (`hol/epower_hol.ipynb`) that walks you through building an end-to-end Agentic AI application on Snowflake. By completing the lab, you gain practical experience with:
+This demo comes with a notebook (`hol/epower_hol.ipynb`) that walks you through building an end-to-end Agentic AI application on Snowflake. The notebook creates all database objects, loads data, deploys the dbt project, and configures the Intelligence Agent. By completing the lab, you gain practical experience with:
 
 - **Snowflake Data Engineering** — dbt projects deployed natively in Snowflake, medallion architecture (Bronze → Silver → Gold), scheduled tasks, and real-time API ingestion
 - **Snowflake AI for Agentic Applications** — making enterprise data AI-ready and leveraging Cortex Agent, Semantic Views (text-to-SQL), and Cortex Search (RAG) to build an intelligent agent that is grounded in governed enterprise data
@@ -79,18 +79,15 @@ To completely remove all demo objects from your account, run the cleanup script:
 ```sql
 -- Run cleanup_reset/epower_cleanup.sql
 -- This will:
---   1. Backup day-ahead price data (cannot be re-fetched)
---   2. Remove the agent from Snowflake Intelligence
---   3. Drop all integrations, the database, warehouse, and role
+--   1. Remove the agent from Snowflake Intelligence
+--   2. Drop all integrations, the database, warehouse, and role
 ```
 
 See [`cleanup_reset/epower_cleanup.sql`](cleanup_reset/epower_cleanup.sql) for the full teardown script.
 
-> **Note:** `RAW_DAY_AHEAD_PRICES` contains historical electricity prices fetched from the Energy-Charts API that cannot be re-fetched. The cleanup script backs them up to `TRANSFER_ENERGYCHARTS_DB` automatically, and the setup notebook restores them during re-installation.
-
 ---
 
-## Use Case: EPOWER Energy
+## EPOWER Business Domain and Business Model
 
 ### The Company
 
@@ -107,16 +104,72 @@ EPOWER pursues a **360° Energy Strategy** — going beyond traditional electric
 | **Drive** | E-mobility with wallboxes and charging tariffs |
 | **Optimize** | Smart home technology for consumption reduction |
 
-### The Business Model
+### Business Domains
 
 EPOWER operates across **6 business domains**, each represented in the demo with structured data and unstructured documents:
 
-1. **Sales & Contracts** — Revenue tracking, product sales, and contract management across all energy verticals (80K contracts, 15 products, 6 categories)
-2. **Billing & Consumption** — Customer energy consumption patterns and billing history (~400K billing records)
-3. **Customer Service** — Service tickets, complaints, and sentiment analysis (10K tickets)
-4. **ePulse Virtual Power Plant (VPP)** — IoT telemetry from ~4,050 battery storage systems, orchestrated as a single virtual power plant trading on day-ahead electricity markets
-5. **HR & Workforce** — Employee data, salaries, and attrition tracking (12K records)
-6. **Finance & Marketing** — Financial transactions (30K) and marketing campaign performance (16K campaign metrics)
+#### 1. Sales & Contracts
+
+Revenue tracking, product sales, and contract management across all energy verticals.
+
+| Data | Description |
+|------|-------------|
+| **sales_fact** | 80K contract records with revenue, units, dates |
+| **product_dim** | 15 products across 6 categories (with CAPEX/OPEX pricing) |
+| **customer_dim** | 20K customers (residential & business) |
+| **Semantic View** | `ENERGY_SALES_SEMANTIC_VIEW` |
+
+#### 2. Billing & Consumption
+
+Customer energy consumption patterns and billing history.
+
+| Data | Description |
+|------|-------------|
+| **billing_history** | ~400K billing records with kWh consumption |
+| **customer_products** | Product ownership (Solar & Storage, Heat Pump, E-Mobility, Smart Home) |
+| **Semantic View** | `BILLING_SEMANTIC_VIEW`, `CUSTOMER_ENERGY_SEMANTIC_VIEW` |
+
+#### 3. Customer Service
+
+Service tickets, complaints, and sentiment analysis.
+
+| Data | Description |
+|------|-------------|
+| **service_logs** | 10K tickets with topic, sentiment, priority |
+| **Documents** | Customer Service Handbook, Invoice FAQ, Energy Tips |
+| **Semantic View** | `SERVICE_SEMANTIC_VIEW` |
+| **Cortex Search** | `SEARCH_SERVICE_DOCS`, `SEARCH_SERVICE_LOGS` |
+
+#### 4. ePulse Virtual Power Plant (VPP)
+
+IoT telemetry from ~4,050 battery storage systems, orchestrated as a single virtual power plant trading on day-ahead electricity markets.
+
+| Data | Description |
+|------|-------------|
+| **EPULSE_DEVICES** | Device registry linking customers to IoT gateways |
+| **RAW_EPULSE_IOT_TELEMETRY** | Hourly telemetry (~6.5M rows / 60 days): solar yield, battery SOC, grid import/export |
+| **RAW_DAY_AHEAD_PRICES** | Day-ahead electricity prices from Energy-Charts API (CET delivery-day aligned) |
+| **Documents** | VPP Program Guide, VPP FAQ, Day-Ahead Pricing, Battery Tech Guide |
+| **dbt Models** | Medallion architecture (Bronze → Silver → Gold) |
+
+#### 5. HR & Workforce
+
+Employee data, salaries, and attrition tracking.
+
+| Data | Description |
+|------|-------------|
+| **hr_employee_fact** | 12K records with salary, department, attrition |
+| **employee_dim** | Employee profiles |
+| **Semantic View** | `HR_SEMANTIC_VIEW` |
+
+#### 6. Finance & Marketing
+
+Financial transactions and marketing campaign performance.
+
+| Data | Description |
+|------|-------------|
+| **finance_transactions** | 30K transactions with approvals |
+| **marketing_campaign_fact** | 16K campaign metrics (spend, leads, impressions) |
 
 ### What Is a Virtual Power Plant (VPP)?
 
@@ -129,6 +182,44 @@ In the real world, companies like [1KOMMA5° (Heartbeat AI)](https://1komma5grad
 - **Customer value** — 70% goes to the customer as bill savings (€50–150/year)
 - **Grid stability** — distributed batteries smooth demand peaks and absorb renewable oversupply
 - **Competitive moat** — VPP enrollment increases customer stickiness across all product categories
+
+#### Price-Reactive Telemetry Generation
+
+All VPP telemetry is generated using **real EPEX day-ahead prices** — no heuristics, no approximations. The notebook loads prices first (Section 4), then generates 60 days of telemetry (Section 5) where every battery charge/discharge decision is driven by actual market signals:
+
+| Step | What | How |
+|------|------|-----|
+| **1. Backfill prices** | 60 days of real EPEX prices | `CALL BACKFILL_DAY_AHEAD_PRICES()` (Section 4) |
+| **2. Generate telemetry** | 60 days of price-reactive IoT data | `CALL GENERATE_DAILY_TELEMETRY()` (Section 5) |
+| **3. Daily refresh** | Next-day prices + new telemetry | `TASK_DAILY_DATA_REFRESH` (Section 7) |
+
+#### Day-Ahead Price Ingestion
+
+Every day, a scheduled Snowflake Task fetches the next day's electricity market prices from the [Energy-Charts API](https://api.energy-charts.info/) (Fraunhofer ISE). During initial setup, the notebook backfills 60 days of historical prices in a single API call. The daily pipeline then keeps prices current automatically:
+
+```mermaid
+graph LR
+    API["Energy-Charts API"] --> RAW["RAW_DAY_AHEAD_PRICES<br/><i>Bronze</i><br/>Raw JSON blob<br/>1 row/delivery day, CET-aligned"]
+    RAW --> STG["stg_day_ahead_prices<br/><i>Silver</i><br/>96 quarter-hourly records<br/>15-min time series"]
+
+    style API fill:#4285f4,stroke:#1a73e8,color:#fff
+    style RAW fill:#e8f0fe,stroke:#4285f4
+    style STG fill:#e6f4ea,stroke:#34a853
+```
+
+| Component | Description |
+|-----------|-------------|
+| **Stored Procedure** | `CALL FETCH_DAY_AHEAD_PRICES(TARGET_DATE)` — fetch a specific day's prices |
+| **Stored Procedure** | `CALL BACKFILL_DAY_AHEAD_PRICES()` — single API range call for 60 days, CET delivery-day aligned |
+| **Stored Procedure** | `CALL GENERATE_DAILY_TELEMETRY()` — backfill VPP telemetry gaps using real prices |
+| **Task** | `TASK_DAILY_DATA_REFRESH` — daily at 5:00 PM CET (prices published ~13:00 CET) |
+| **Idempotent** | All procedures skip dates that already exist |
+| **Pipeline** | Task fetches next-day prices → generates telemetry → dbt transforms all |
+
+**Manual fetch:**
+```sql
+CALL EPOWER_OPS.FETCH_DAY_AHEAD_PRICES(CURRENT_DATE() + 1);
+```
 
 ### Customer Types
 
@@ -151,44 +242,44 @@ EPOWER serves two fundamentally different customer segments:
 
 ## Architecture & Snowflake Features
 
+The architecture is designed to reflect EPOWER's business domains and make all enterprise data — structured, semi-structured, and unstructured — accessible through a single intelligent agent. Each architectural layer maps directly to a business need:
+
+- **Data Ingestion** brings in data from each business domain: CSV files for core enterprise data (Sales, Billing, Service, HR, Finance), real-time API calls for electricity market prices, and IoT telemetry from the VPP fleet
+- **Data Engineering** (dbt pipelines, medallion architecture) transforms raw VPP telemetry and market prices into business-ready analytics — connecting the two streams in `mart_vpp_price_optimization` where per-device telemetry meets hourly electricity prices to calculate arbitrage margins
+- **AI-Ready Layer** makes every business domain queryable: Semantic Views provide text-to-SQL access to structured data (one view per domain), while Cortex Search enables RAG over product documentation, service handbooks, and historical tickets
+- **Cortex Agent** orchestrates across all domains — routing natural language questions to the right Semantic View or Cortex Search service, combining structured analytics with document retrieval in a single conversational interface
+
 ### Architecture Overview
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                     SNOWFLAKE INTELLIGENCE AGENT                            │
-│                    (Natural Language Interface)                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                    │
-              ┌─────────────────────┴─────────────────────┐
-              ▼                                           ▼
-┌───────────────────────────────┐          ┌───────────────────────────────┐
-│       SEMANTIC VIEWS          │          │       CORTEX SEARCH           │
-│       (Text-to-SQL)           │          │       (RAG)                   │
-├───────────────────────────────┤          ├───────────────────────────────┤
-│ • Sales                       │          │ • Energy Docs                 │
-│ • Billing                     │          │ • Product Docs                │
-│ • Service                     │          │ • Service Docs                │
-│ • Customer Energy             │          │ • Service Logs                │
-│ • HR                          │          │ • 5 Column-Lookup Services    │
-│ • VPP Telemetry               │          │                               │
-│ • Market Prices               │          │                               │
-└───────────────────────────────┘          └───────────────────────────────┘
-              │                                           │
-              ▼                                           ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              DATA LAYER                                     │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  EPOWER_GOLD (Dims/Facts)    EPOWER_BRONZE/SILVER/GOLD    EPOWER_OPS        │
-│  ────────────────────────     ──────────────────────────    ──────────────    │
-│  23 tables, ~850K rows         dbt pipelines (VPP + Market)  Procs, Tasks,    │
-│                                                             Stages, dbt Proj │
-│                    ┌─────────┐    ┌─────────┐    ┌─────────┐               │
-│                    │ BRONZE  │───▶│ SILVER  │───▶│  GOLD   │               │
-│                    │ (raw)   │ dbt│(cleaned)│ dbt│ (agg)   │               │
-│                    └─────────┘    └─────────┘    └─────────┘               │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+graph TD
+    AGENT["<b>SNOWFLAKE INTELLIGENCE AGENT</b><br/><i>Natural Language Interface</i>"]
+
+    subgraph Tools[" "]
+        direction LR
+        SV["<b>SEMANTIC VIEWS</b><br/>Text-to-SQL<br/><br/>• Sales • Billing<br/>• Service • Customer Energy<br/>• HR • VPP Telemetry<br/>• Market Prices"]
+        CS["<b>CORTEX SEARCH</b><br/>RAG<br/><br/>• Energy Docs • Product Docs<br/>• Service Docs • Service Logs<br/>• 5 Column-Lookup Services"]
+    end
+
+    subgraph Data["DATA LAYER"]
+        direction LR
+        GOLD["<b>EPOWER_GOLD</b><br/>23 dim/fact tables<br/>~850K rows"]
+        DOCS["<b>Parsed Documents</b><br/>14 PDFs & Markdown"]
+        DBT["<b>dbt Pipelines</b><br/>Bronze → Silver → Gold<br/>VPP + Market Data"]
+    end
+
+    AGENT --> SV
+    AGENT --> CS
+    SV --> GOLD
+    CS --> DOCS
+    DBT --> GOLD
+
+    style AGENT fill:#1a73e8,stroke:#1557b0,color:#fff
+    style SV fill:#34a853,stroke:#2d8f47,color:#fff
+    style CS fill:#34a853,stroke:#2d8f47,color:#fff
+    style GOLD fill:#fbbc04,stroke:#d9a003,color:#333
+    style DOCS fill:#fbbc04,stroke:#d9a003,color:#333
+    style DBT fill:#ea4335,stroke:#c5352b,color:#fff
 ```
 
 **Data Flow:**
@@ -196,121 +287,22 @@ EPOWER serves two fundamentally different customer segments:
 - **IoT telemetry** → EPOWER_BRONZE → dbt → EPOWER_SILVER → dbt → EPOWER_GOLD → Semantic View → Agent
 - **Documents** (PDF/MD) → Cortex Search → Agent (RAG)
 
-### Snowflake Features Demonstrated
+### Snowflake Platform Features
 
-| Feature | Usage in Demo |
-|---------|---------------|
-| **Cortex Agent** | Multi-tool AI assistant combining SQL + RAG across all business domains |
-| **Semantic Views** | 7 business-friendly data models enabling text-to-SQL for structured analytics |
-| **Cortex Search** | 9 services — 4 document RAG services + 5 high-cardinality column lookup services |
-| **dbt on Snowflake** | Native dbt execution without external infrastructure (6 models, medallion architecture) |
-| **Git Integration** | Repository connected directly to Snowflake Workspace — code, data, and notebooks in one place |
-| **External Access** | API integration for real EPEX day-ahead electricity prices (Energy-Charts API) |
-| **Snowflake Tasks** | Scheduled data refresh pipeline: prices → telemetry → dbt (daily 5:00 PM CET) |
-| **Stored Procedures** | Price ingestion (`FETCH_DAY_AHEAD_PRICES`), telemetry generation (`GENERATE_DAILY_TELEMETRY`) |
-| **Warehouse** | `EPOWER_COMPUTE` (SMALL, auto-suspend 300s) |
-| **MCP Server** | Snowflake-managed MCP server exposing 12 tools (1 agent + 7 analyst + 4 search) via Model Context Protocol |
+Each Snowflake feature in the architecture serves a specific role in enabling EPOWER's business domains:
 
----
-
-## Business Domains (Data Details)
-
-### 1. Sales & Contracts
-Revenue tracking, product sales, and contract management across all energy verticals.
-
-| Data | Description |
-|------|-------------|
-| **sales_fact** | 80K contract records with revenue, units, dates |
-| **product_dim** | 15 products across 6 categories (with CAPEX/OPEX pricing) |
-| **customer_dim** | 20K customers (residential & business) |
-| **Semantic View** | `ENERGY_SALES_SEMANTIC_VIEW` |
-
-### 2. Billing & Consumption
-Customer energy consumption patterns and billing history.
-
-| Data | Description |
-|------|-------------|
-| **billing_history** | ~400K billing records with kWh consumption |
-| **customer_products** | Product ownership (Solar & Storage, Heat Pump, E-Mobility, Smart Home) |
-| **Semantic View** | `BILLING_SEMANTIC_VIEW`, `CUSTOMER_ENERGY_SEMANTIC_VIEW` |
-
-### 3. Customer Service
-Service tickets, complaints, and sentiment analysis.
-
-| Data | Description |
-|------|-------------|
-| **service_logs** | 10K tickets with topic, sentiment, priority |
-| **Documents** | Customer Service Handbook, Invoice FAQ, Energy Tips |
-| **Semantic View** | `SERVICE_SEMANTIC_VIEW` |
-| **Cortex Search** | `SEARCH_SERVICE_DOCS`, `SEARCH_SERVICE_LOGS` |
-
-### 4. ePulse Virtual Power Plant (VPP)
-IoT telemetry from battery storage systems enrolled in the VPP program.
-
-| Data | Description |
-|------|-------------|
-| **EPULSE_DEVICES** | Device registry linking customers to IoT gateways |
-| **RAW_EPULSE_IOT_TELEMETRY** | Hourly telemetry (~6.5M rows / 60 days): solar yield, battery SOC, grid import/export |
-| **RAW_DAY_AHEAD_PRICES** | Day-ahead electricity prices from Energy-Charts API (CET delivery-day aligned) |
-| **Documents** | VPP Program Guide, VPP FAQ, Day-Ahead Pricing, Battery Tech Guide |
-| **dbt Models** | Medallion architecture (Bronze → Silver → Gold) |
-
-#### Why Telemetry Needs Price Data
-
-The VPP simulates **real battery behavior**: batteries charge when electricity is cheap and discharge when expensive. Without price data, telemetry would just be random noise. With prices, you get realistic patterns that mirror what aggregators like 1KOMMA5° Heartbeat AI do in the real world — optimize residential batteries against day-ahead market prices.
-
-#### Price-Reactive Telemetry Generation
-
-All VPP telemetry is generated using **real EPEX day-ahead prices** — no heuristics, no approximations. The notebook loads prices first (Section 4), then generates 60 days of telemetry (Section 5) where every battery charge/discharge decision is driven by actual market signals:
-
-| Step | What | How |
-|------|------|-----|
-| **1. Backfill prices** | 60 days of real EPEX prices | `CALL BACKFILL_DAY_AHEAD_PRICES()` (Section 4) |
-| **2. Generate telemetry** | 60 days of price-reactive IoT data | `CALL GENERATE_DAILY_TELEMETRY()` (Section 5) |
-| **3. Daily refresh** | Next-day prices + new telemetry | `TASK_DAILY_DATA_REFRESH` (Section 7) |
-
-#### Day-Ahead Price Ingestion
-
-The demo fetches real electricity market prices from the [Energy-Charts API](https://api.energy-charts.info/) (Fraunhofer ISE):
-
-```
-Energy-Charts API ──► RAW_DAY_AHEAD_PRICES (Bronze) ──► stg_day_ahead_prices (Silver)
-                          │                                    │
-                     Raw JSON blob                      96 quarter-hourly records
-                     (1 row/delivery day,               (15-min time series)
-                      CET-aligned)
-```
-
-| Component | Description |
-|-----------|-------------|
-| **Stored Procedure** | `CALL FETCH_DAY_AHEAD_PRICES(TARGET_DATE)` — fetch a specific day's prices |
-| **Stored Procedure** | `CALL BACKFILL_DAY_AHEAD_PRICES()` — single API range call for 60 days, CET delivery-day aligned |
-| **Stored Procedure** | `CALL GENERATE_DAILY_TELEMETRY()` — backfill VPP telemetry gaps using real prices |
-| **Task** | `TASK_DAILY_DATA_REFRESH` — daily at 5:00 PM CET (prices published ~13:00 CET) |
-| **Idempotent** | All procedures skip dates that already exist |
-| **Pipeline** | Task fetches next-day prices → generates telemetry → dbt transforms all |
-
-**Manual fetch:**
-```sql
-CALL EPOWER_OPS.FETCH_DAY_AHEAD_PRICES(CURRENT_DATE() + 1);
-```
-
-### 5. HR & Workforce
-Employee data, salaries, and attrition tracking.
-
-| Data | Description |
-|------|-------------|
-| **hr_employee_fact** | 12K records with salary, department, attrition |
-| **employee_dim** | Employee profiles |
-| **Semantic View** | `HR_SEMANTIC_VIEW` |
-
-### 6. Finance & Marketing
-Financial transactions and marketing campaign performance.
-
-| Data | Description |
-|------|-------------|
-| **finance_transactions** | 30K transactions with approvals |
-| **marketing_campaign_fact** | 16K campaign metrics (spend, leads, impressions) |
+| Feature | Business Domain | Role in Architecture |
+|---------|----------------|---------------------|
+| **Cortex Agent** | All domains | Orchestrates across Sales, Billing, Service, HR, VPP, and Market data — routing natural language questions to the right tool |
+| **Semantic Views** | Sales, Billing, Service, HR, VPP, Market Prices | 7 domain-specific data models that translate business questions into SQL (one per domain) |
+| **Cortex Search** | Service, Products, Energy | 9 services — 4 document RAG services for policy/handbook retrieval + 5 high-cardinality column lookup services for Semantic View filter values |
+| **dbt on Snowflake** | VPP, Market Prices | Native dbt execution (6 models, medallion architecture) transforming raw IoT telemetry and market prices into business-ready analytics |
+| **External Access** | VPP, Market Prices | API integration fetching real EPEX day-ahead electricity prices from the Energy-Charts API — the market signal driving VPP battery optimization |
+| **Stored Procedures** | VPP, Market Prices | Price ingestion (`FETCH_DAY_AHEAD_PRICES`), telemetry generation (`GENERATE_DAILY_TELEMETRY`) — the operational logic behind the VPP data pipeline |
+| **Snowflake Tasks** | VPP, Market Prices | Scheduled daily pipeline (5:00 PM CET): fetch next-day prices → generate telemetry → run dbt — keeping VPP analytics current |
+| **Git Integration** | All domains | Repository connected directly to Snowflake Workspace — code, data, notebooks, and dbt project in one place |
+| **Snowflake Compute** | All domains | `EPOWER_COMPUTE` virtual warehouse (SMALL, auto-suspend 300s) — single compute cluster for all workloads |
+| **MCP Server** | All domains | Snowflake-managed MCP server exposing 12 tools (1 agent + 7 analyst + 4 search) via Model Context Protocol for external AI clients |
 
 ---
 
@@ -322,28 +314,56 @@ The demo uses **dbt on Snowflake** — native dbt execution without any external
 
 All data follows a three-layer medallion pattern within the `EPOWER_DEMO` database:
 
-```
-EPOWER_BRONZE                  EPOWER_SILVER                 EPOWER_GOLD
-(Raw Ingestion)                (Cleaned & Enriched)          (Business-Ready)
-─────────────────              ─────────────────             ─────────────────
-RAW_EPULSE_IOT_TELEMETRY  ──► stg_devices (table)       ──► mart_vpp_capacity_hourly
-EPULSE_DEVICES                 fct_epulse_telemetry (table)   mart_vpp_price_optimization
-RAW_DAY_AHEAD_PRICES       ──► stg_day_ahead_prices      ──► mart_day_ahead_prices
-                               (incremental)
-                                                              + 24 dim/fact tables
-                                                                (CSV-ingested)
+```mermaid
+graph LR
+    subgraph BRONZE["EPOWER_BRONZE<br/><i>Raw Ingestion</i>"]
+        T1[RAW_EPULSE_IOT_TELEMETRY]
+        T2[EPULSE_DEVICES]
+        T3[RAW_DAY_AHEAD_PRICES]
+    end
+
+    subgraph SILVER["EPOWER_SILVER<br/><i>Cleaned & Enriched</i>"]
+        S1[stg_devices]
+        S2[fct_epulse_telemetry]
+        S3["stg_day_ahead_prices<br/><i>(incremental)</i>"]
+    end
+
+    subgraph GOLD["EPOWER_GOLD<br/><i>Business-Ready</i>"]
+        G1[mart_vpp_capacity_hourly]
+        G2[mart_vpp_price_optimization]
+        G3[mart_day_ahead_prices]
+        G4["+ 23 dim/fact tables<br/><i>(CSV-ingested)</i>"]
+    end
+
+    T2 --> S1
+    T1 --> S2
+    S1 --> S2
+    T3 --> S3
+    S2 --> G1
+    S2 --> G2
+    S3 --> G2
+    S3 --> G3
+
+    style BRONZE fill:#e8f0fe,stroke:#4285f4
+    style SILVER fill:#e6f4ea,stroke:#34a853
+    style GOLD fill:#fef7e0,stroke:#fbbc04
 ```
 
 ### Two Pipelines, One Project — Connected at the Top
 
 The dbt project (`epower_dbt/`) contains two pipelines that converge in the Gold layer. While VPP telemetry and market prices start as independent streams, they join in `mart_vpp_price_optimization` — the model that calculates battery arbitrage margins by combining per-device telemetry with hourly electricity prices:
 
-```
-EPULSE_DEVICES ──► stg_devices ──► fct_epulse_telemetry ──► mart_vpp_capacity_hourly
-                                         │
-                                         ├──► mart_vpp_price_optimization  ◄── THE JOIN
-                                         │
-RAW_DAY_AHEAD_PRICES ──► stg_day_ahead_prices ──► mart_day_ahead_prices
+```mermaid
+graph LR
+    ED[EPULSE_DEVICES] --> SD[stg_devices]
+    SD --> FT[fct_epulse_telemetry]
+    FT --> MC[mart_vpp_capacity_hourly]
+    FT --> MP["mart_vpp_price_optimization<br/><b>← THE JOIN</b>"]
+    RAW[RAW_DAY_AHEAD_PRICES] --> SP[stg_day_ahead_prices]
+    SP --> MP
+    SP --> MD[mart_day_ahead_prices]
+
+    style MP fill:#ea4335,stroke:#c5352b,color:#fff
 ```
 
 #### 1. ePulse VPP Pipeline (`epulse_vpp/`)
@@ -541,7 +561,7 @@ Snowflake_EPower_Demo/
 │   └── epower_hol.ipynb             # Main setup notebook — run this to build everything
 │
 ├── cleanup_reset/                   # ── Cleanup & Reset ──
-│   └── epower_cleanup.sql           # Teardown: backup prices, drop all demo objects
+│   └── epower_cleanup.sql           # Teardown: drop all demo objects
 │
 ├── demo_data/
 │   ├── structured_data/             # 23 CSV files loaded into EPOWER_GOLD
@@ -604,7 +624,7 @@ Snowflake_EPower_Demo/
 |-------|---------|-------------|
 | `hol/epower_hol.ipynb` | Creates all Snowflake objects end-to-end | Initial setup — run once |
 | `demo_flow.md` | 12-question guided demo script (4 acts) | During the demo |
-| `cleanup_reset/epower_cleanup.sql` | Drops all demo objects (with price backup) | Teardown / reset |
+| `cleanup_reset/epower_cleanup.sql` | Drops all demo objects | Teardown / reset |
 | `epower_dbt/` | dbt project with 6 models (medallion architecture) | Deployed by the notebook; edit models here |
 | `demo_data/structured_data/` | 23 CSV files loaded into EPOWER_GOLD | Source data — regenerate with `generators/generate_data.py` |
 | `demo_data/unstructured_data/` | 14 PDF/MD documents for RAG search | Source docs — regenerate with `generators/generate_docs.py` |
