@@ -9,10 +9,10 @@ In the center, place a large glowing building or hub labeled **"Snowflake"** wit
 - **Silver layer** (silver/grey tint) — cleaning & transformation: small dbt logos, data being enriched and aggregated 
 - **Gold layer** (gold tint) — polished business data: charts, KPIs, semantic models glowing with structure
 
-On top of the Snowflake hub, place a glowing **Snowflake Intelligence Agent** — a friendly AI assistant character (robot / holographic friendly looking figure) receiving questions from Business Users in both **German and English**, e.g. "Zeige mir den Umsatz nach Region" and "Show VPP margins by price zone". The agent has access to tools for retreieval visualized through arms
+On top of the Snowflake hub, place a glowing **Snowflake Intelligence Agent** — a friendly AI assistant character (robot / holographic) friendly looking figure receiving questions from Business Users in both **German and English**, e.g. "Zeige mir den Umsatz nach Region" and "Show VPP margins by price zone". The agent has access to tools for retrieval visualized through arms
 - Left arm reaches to **Semantic Views** (7 glowing data lenses labeled Sales, Billing, Service, Customer, HR, VPP Telemetry, Market Prices) — representing text-to-SQL
 - Right arm reaches to **Cortex Search** (a magnifying glass over stacked documents with a "9" badge) — representing Hybrid Search on PDFs and service docs
-- There is also a connection downward to a glowing **MCP Server** portal (labeled "MCP — 12 Tools") — a universal plug/socket where external AI clients can connect to the platform to the agent and data retrieval tools
+- There is also a connection downward between the Snowflake Intelligenec to a glowing **MCP Server** portal (labeled "MCP — 12 Tools") — a universal plug/socket where external AI clients can connect to the platform to the agent it's connected tools
 
 ## Left Side — The Energy World (physical reality)
 
@@ -55,7 +55,7 @@ Bottom-right: A **control room / operations center** with:
 Show a visible **data flow pipeline** running along the bottom:
 1. **Energy-Charts API** (a cloud with "Fraunhofer ISE" label) sending **real EPEX day-ahead prices** into the Snowflake hub
 2. **IoT telemetry signals** (from the ePulse gateways) flowing as data streams — label "~17.5M rows / 90 days"
-3. **CSV files** (23 structured tables) and **PDF/MD documents** (14 docs) being uploaded via a stage
+3. **Domain Data**: Sales, Product, Maketing, HR, Customer Service
 4. A **clock/schedule icon** labeled "Daily Task 5:00 PM CET" showing the automated refresh cycle: prices → telemetry → dbt
 5. **dbt logo** with arrows showing Bronze → Silver → Gold transformation — label "6 DBT Models, Medallion Architecture"
 6. The word **"EPOWER_DataTeam"** on a small operations panel showing: Stored Procs, Tasks, dbt-project
