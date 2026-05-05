@@ -6,12 +6,29 @@
 
 This demo comes with a notebook (`hol/epower_hol.ipynb`) that walks you through building an end-to-end Agentic AI application on Snowflake. The notebook creates all database objects, loads data, deploys the dbt project, and configures the Intelligence Agent. By completing the lab, you gain practical experience with:
 
-- **Snowflake Data Engineering** — dbt projects deployed natively in Snowflake, medallion architecture (Bronze → Silver → Gold), scheduled tasks, and real-time API ingestion
+- **Snowflake Data Engineering** — dbt projects deployed natively in Snowflake, medallion / lakehouse architecture (Bronze → Silver → Gold), scheduled tasks for pipeline execution, and real-time API ingestion
 - **Snowflake AI for Agentic Applications** — making enterprise data AI-ready and leveraging Cortex Agent, Semantic Views (text-to-SQL), and Cortex Search (RAG) to build an intelligent agent that is grounded in governed enterprise data
 
 The result: a fully functional **EPOWER Intelligence Agent** that delivers deep insights and task-oriented outcomes — from natural language questions to precise, data-grounded answers across sales, billing, service, HR, and real-time VPP analytics.
 
 > **New to the demo?** Start with `demo_flow.md` for a guided walkthrough with ready-to-use questions.
+
+---
+
+## Required Privileges
+
+The setup notebook (`hol/epower_hol.ipynb`) requires elevated privileges for three specific cells (§1, §2, §10). The following account-level privileges are needed — all are inherited by default through the **ACCOUNTADMIN** role:
+
+| Privilege | Actions Enabled | Notebook Section |
+|-----------|----------------|-----------------|
+| `CREATE ROLE` | Create `EPOWER_ROLE` | §1 |
+| `CREATE WAREHOUSE` | Create `EPOWER_COMPUTE` warehouse | §1 |
+| `MANAGE GRANTS` | Grant `CREATE DATABASE`, `EXECUTE TASK` on account; grant role/warehouse/integration usage | §1, §2, §10 |
+| `CREATE INTEGRATION` | Create external access integrations for API egress | §2 |
+| `CREATE SNOWFLAKE INTELLIGENCE` | Create the default Snowflake Intelligence object | §1 |
+| `MODIFY` on Snowflake Intelligence object | Register the agent with Snowflake Intelligence | §10 |
+
+> **If you cannot use ACCOUNTADMIN:** Ask your account administrator to grant these specific privileges to your role, or have them run the three marked cells on your behalf. All other cells run under `EPOWER_ROLE` with no elevated access.
 
 ---
 
