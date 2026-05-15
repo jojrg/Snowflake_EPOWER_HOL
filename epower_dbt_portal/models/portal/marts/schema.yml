@@ -1,0 +1,30 @@
+version: 2
+
+models:
+  - name: mart_portal_engagement
+    description: Daily portal engagement metrics by region, customer type, and event type
+    columns:
+      - name: activity_date
+        description: Date of portal activity
+        tests:
+          - not_null
+      - name: region
+        description: German region (North, South, East, West)
+        tests:
+          - not_null
+      - name: customer_type
+        description: Customer segment (Privatkunde, Kleingewerbe, Gewerbekunde)
+        tests:
+          - not_null
+      - name: event_type
+        description: Portal action type (LOGIN, METER_READING, TARIFF_CHANGE, SERVICE_REQUEST, VPP_ENROLLMENT)
+        tests:
+          - not_null
+      - name: event_count
+        description: Total number of events for this date/region/type combination
+        tests:
+          - not_null
+      - name: unique_customers
+        description: Count of distinct customers performing this action
+        tests:
+          - not_null

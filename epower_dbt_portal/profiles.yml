@@ -1,0 +1,12 @@
+default:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: "placeholder"
+      user: "placeholder"
+      role: EPOWER_ROLE
+      database: EPOWER_DEMO
+      warehouse: EPOWER_COMPUTE
+      schema: EPOWER_OPS
+      threads: 4

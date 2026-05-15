@@ -1,0 +1,14 @@
+name: epower_portal_analytics
+version: '1.0.0'
+
+profile: default
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+
+models:
+  epower_portal_analytics:
+    portal:
+      marts:
+        +schema: EPOWER_GOLD
+        +materialized: table

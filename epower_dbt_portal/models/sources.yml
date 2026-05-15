@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: epower_bronze
+    database: EPOWER_DEMO
+    schema: EPOWER_BRONZE
+    tables:
+      - name: portal_activity_log
+        description: Customer portal activity log replicated from Snowflake Postgres via pg_lake (Iceberg)
