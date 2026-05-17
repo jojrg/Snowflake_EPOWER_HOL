@@ -1,0 +1,21 @@
+# Add these entries to the existing sources.yml under epower_bronze:
+#
+#   - name: epower_bronze
+#     database: EPOWER_DEMO
+#     schema: EPOWER_BRONZE
+#     tables:
+#       - name: epulse_devices              # already exists
+#       - name: raw_epulse_iot_telemetry    # already exists
+#       - name: raw_day_ahead_prices        # already exists
+#       - name: contract_cancellations        # NEW
+#       - name: customer_surveys              # NEW
+
+# Add this section to dbt_project.yml under models > epower_analytics:
+#
+#     customer_analytics:
+#       staging:
+#         +schema: EPOWER_SILVER
+#         +materialized: table
+#       marts:
+#         +schema: EPOWER_GOLD
+#         +materialized: table

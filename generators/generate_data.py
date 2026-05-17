@@ -322,9 +322,12 @@ solar_customers = set(all_customers[:num_solar])
 heatpump_pool = all_customers[:num_overlap] + all_customers[num_solar:num_solar + (num_heatpump - num_overlap)]
 heatpump_customers = set(heatpump_pool)
 
+gas_customers = set(all_customers) - heatpump_customers
+
 print(f"   - Pre-assigned Solar customers: {len(solar_customers):,}")
 print(f"   - Pre-assigned Heat Pump customers: {len(heatpump_customers):,}")
 print(f"   - Overlap (both): {len(solar_customers & heatpump_customers):,}")
+print(f"   - Pre-assigned Gas customers (non-HP): {len(gas_customers):,}")
 
 contracts = []
 start_date, end_date = datetime(2022, 1, 1), datetime(2025, 12, 31)
@@ -356,6 +359,18 @@ for cust in heatpump_customers:
     })
     contract_id += 1
 
+for cust in gas_customers:
+    c = customer_lookup.loc[cust]
+    product_key = random.choice(gas_products)
+    pr = PRODUCT_PRICING[product_key]
+    contracts.append({
+        'sale_id': contract_id, 'date': fake.date_between(start_date=start_date, end_date=end_date).strftime('%Y-%m-%d'),
+        'customer_key': cust, 'product_key': product_key, 'sales_rep_key': random.randint(1, 500),
+        'region_key': c['region_key'], 'vendor_key': random.randint(1, 200),
+        'amount': round(random.uniform(pr['opex_min'], pr['opex_max']), 2), 'units': random.randint(10000, 25000)
+    })
+    contract_id += 1
+
 remaining_contracts = NUM_CONTRACTS - len(contracts)
 for _ in range(remaining_contracts):
     customer_key = random.randint(1, NUM_CUSTOMERS)
@@ -364,21 +379,9 @@ for _ in range(remaining_contracts):
     is_hp = customer_key in heatpump_customers
 
     if is_hp:
-        if housing == 'Einfamilienhaus':
-            product_weights = [0.55, 0.20, 0.15, 0.10]
-        elif housing == 'Gewerbeimmobilie':
-            product_weights = [0.55, 0.20, 0.15, 0.10]
-        else:
-            product_weights = [0.55, 0.20, 0.15, 0.10]
-        product_type = random.choices(['electricity', 'smarthome', 'emobility', 'electricity'], weights=product_weights)[0]
+        product_type = random.choices(['electricity', 'smarthome', 'emobility', 'electricity'], weights=[0.55, 0.20, 0.15, 0.10])[0]
     else:
-        if housing == 'Einfamilienhaus':
-            product_weights = [0.40, 0.25, 0.15, 0.12, 0.08]
-        elif housing == 'Gewerbeimmobilie':
-            product_weights = [0.42, 0.30, 0.12, 0.08, 0.08]
-        else:
-            product_weights = [0.42, 0.28, 0.13, 0.10, 0.07]
-        product_type = random.choices(['electricity', 'gas', 'smarthome', 'emobility', 'electricity'], weights=product_weights)[0]
+        product_type = random.choices(['electricity', 'gas', 'smarthome', 'emobility', 'electricity'], weights=[0.40, 0.25, 0.15, 0.12, 0.08])[0]
 
     if product_type == 'electricity':
         product_key = random.choice(electricity_products)

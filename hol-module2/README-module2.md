@@ -1,83 +1,327 @@
-# Module 2: Snowflake Postgres — "Mein EPOWER" Customer Portal
+# Module 2: Snowflake Postgres — Customer Self-Service Portal
 
-## What This Module Does
+**Extend the EPOWER demo with a transactional Postgres backend, connected to Snowflake analytics via pg_lake and Apache Iceberg.**
 
-Extends the EPOWER demo with a **Snowflake Postgres** instance backing a customer self-service portal. 20,000 customers manage meter readings, tariff switches, service requests, and VPP enrollments through a standard web application stack (React + REST API + PostgreSQL).
+---
 
-The key demo story: **operational portal data flows into Snowflake for analytics — with zero middleware.**
+## Motivation
+
+The EPOWER base demo (Module 1) is purely analytical: data lives in Snowflake, transformed by dbt, queried by the Intelligence Agent. But real enterprises don't start with analytics — they start with **operational systems** that generate data. The question every data team faces:
+
+> "How do we get data from our application databases into our analytical platform — without building and maintaining ETL pipelines?"
+
+Module 2 answers this with Snowflake Postgres + pg_lake: a managed PostgreSQL that natively writes Apache Iceberg tables, readable by Snowflake without any middleware.
+
+---
+
+## The Business Case: "Mein EPOWER"
+
+Every energy retailer in Germany needs a digital customer portal. Regulatory requirements (Marktkommunikation, BDEW processes) and customer expectations demand self-service: meter readings, tariff management, billing inquiries, and program enrollments.
+
+**"Mein EPOWER"** is the customer-facing web application serving 20,000 residential and business customers. It handles:
+
+| Feature | What Customers Do |
+|---------|------------------|
+| **Meter Readings** | Submit monthly electricity and gas meter readings (Zählerstandsmeldung) |
+| **Tariff Switching** | Request product changes (e.g., Strom Basis → Ökostrom 100%) |
+| **Service Requests** | Open support tickets, report issues, ask billing questions |
+| **VPP Enrollment** | Sign up for (or opt out of) the ePulse Virtual Power Plant program |
+| **Account Management** | Update preferences, change notification settings, view history |
+
+---
+
+## Why Postgres?
+
+### The Standard Web Application Pattern
+
+The portal uses the most common backend architecture in software:
+
+```
+Browser → React Frontend → REST API (Node.js / Python) → PostgreSQL
+```
+
+This pattern is used by millions of applications worldwide — from startups to enterprises. PostgreSQL is the #1 choice for web application backends because it provides:
+
+- **Low-latency point reads** — "Show my last 6 meter readings" returns in <10ms
+- **ACID transactions** — A tariff switch either completes fully or rolls back entirely
+- **Constraint enforcement** — A meter reading cannot be lower than the previous one
+- **Concurrent access** — Hundreds of customers using the portal simultaneously
+- **Row-level locking** — Two processes updating the same order don't conflict
+- **Session management** — Login state, CSRF tokens, preferences with millisecond reads
+
+### Why Not Snowflake for the Portal Backend?
+
+Snowflake is designed for **analytical workloads**: scanning millions of rows, aggregating data, running complex joins across large datasets. It is not designed for:
+
+- Sub-second single-row lookups by primary key
+- Hundreds of concurrent INSERT/UPDATE operations per second
+- Mutable state with frequent row-level changes
+- Session management requiring millisecond response times
+- Constraint-checked form submissions
+
+**Both are needed.** Postgres handles the operational workload; Snowflake handles the analytical workload. The bridge between them is pg_lake.
+
+---
 
 ## Architecture
 
+### Data Flow
+
 ```
-Portal (Web App) → Snowflake Postgres (OLTP)
-                        │
-                   portal_activity_log (append-only, denormalized)
-                        │
-                   pg_incremental (1-min sync)
-                        ▼
-                   Iceberg table (pg_lake managed)
-                        │
-                   Catalog Integration (auto-refresh 30s)
-                        ▼
-                   Snowflake (EPOWER_BRONZE.PORTAL_ACTIVITY_LOG)
-                        │
-                   MART_PORTAL_ENGAGEMENT → PORTAL_SEMANTIC_VIEW → EPOWER AGENT
+Customer (Browser)
+    │
+    ▼
+React Frontend
+    │
+    ▼
+REST API (application server)
+    │
+    ▼
+┌───────────────────────────────────────────────────────────────┐
+│  SNOWFLAKE POSTGRES                                           │
+│                                                               │
+│  Operational Tables          Activity Log                     │
+│  ┌──────────────────┐       ┌───────────────────────────┐    │
+│  │ portal_users     │       │ portal_activity_log       │    │
+│  │ meter_readings   │ ───►  │ (append-only: one row     │    │
+│  │ tariff_orders    │       │  per user action)         │    │
+│  │ service_requests │       └─────────────┬─────────────┘    │
+│  └──────────────────┘                     │                   │
+│                               pg_incremental (every 1 min)    │
+│                                           ▼                   │
+│                               ┌───────────────────────┐       │
+│                               │ Iceberg table         │       │
+│                               │ (object storage)      │       │
+│                               └───────────┬───────────┘       │
+└───────────────────────────────────────────┼───────────────────┘
+                                            │
+                                 Catalog Integration
+                                 (auto-refresh 30s)
+                                            ▼
+┌───────────────────────────────────────────────────────────────┐
+│  SNOWFLAKE                                                    │
+│                                                               │
+│  EPOWER_BRONZE                                                │
+│  └── PORTAL_ACTIVITY_LOG (Iceberg table)                      │
+│              │                                                │
+│              ▼                                                │
+│  EPOWER_GOLD                                                  │
+│  └── MART_PORTAL_ENGAGEMENT (daily metrics)                   │
+│              │                                                │
+│              ▼                                                │
+│  PORTAL_SEMANTIC_VIEW → Cortex Agent (portal_analyst tool)    │
+│                                                               │
+└───────────────────────────────────────────────────────────────┘
 ```
 
-## Why Postgres (Not Snowflake) for the Portal?
+### What Stays in Postgres vs. What Flows to Snowflake
 
-The portal needs sub-second CRUD, row-level locking, transaction semantics, and concurrent session management — all OLTP patterns that PostgreSQL excels at. Snowflake is the analytical layer, not the transactional backend.
+| Data | Stays in Postgres? | Flows to Snowflake? | Reasoning |
+|------|-------------------|--------------------| ----------|
+| User sessions & auth | ✅ | ❌ | Ephemeral, security-sensitive, no analytical value |
+| Meter readings (transactional) | ✅ | ❌ | Billing pipeline already feeds Snowflake; portal is just the input channel |
+| Tariff orders (mutable state) | ✅ | ❌ | Status changes frequently; Postgres handles the lifecycle |
+| Service requests (mutable) | ✅ | ❌ | Open/closed status managed in Postgres |
+| **Portal activity log** | ✅ | **✅** | Append-only, denormalized, time-partitioned — perfect for Iceberg |
 
-## Why pg_lake (Not Kafka)?
+The activity log is deliberately designed as the **analytics export layer**: every user action generates one immutable, self-contained record with all context (customer, region, type, timestamp, details). It never needs to be updated, making it ideal for incremental replication.
 
-In a traditional setup: Postgres → Kafka Connect → Kafka → Snowpipe Streaming → Snowflake.
-With pg_lake: **Postgres → Iceberg → Snowflake.** Zero additional infrastructure.
+---
 
-pg_lake eliminates Kafka as middleware *for the Postgres-to-Snowflake path specifically*. Kafka is still the right choice when multiple consumers need the same events, you need replay capability, or you're at massive scale. For the "one OLTP source → one analytical destination" pattern, pg_lake is simpler.
+## Snowflake Platform Features
 
-## Portal Activity Log Schema
+### Snowflake Postgres
 
-| Column | Type | Meaning |
-|--------|------|---------|
-| `activity_id` | BIGSERIAL | Auto-increment PK |
-| `customer_key` | INT | FK to portal_users / links to EPOWER CUSTOMER_DIM |
+Fully managed PostgreSQL running inside the Snowflake platform.
+
+- **No infrastructure**: No EC2 instances, no RDS, no patching, no backup configuration
+- **Standard connectivity**: Any Postgres client works — `psql`, JDBC, SQLAlchemy, Django ORM, Rails ActiveRecord
+- **Auto-suspend/resume**: Saves credits when the portal has no traffic
+- **Integrated**: Lives in the same account as your Snowflake warehouse, governed by the same RBAC
+
+### pg_lake
+
+Open-source Postgres extension (Apache 2.0 license) created by the Crunchy Data team (now at Snowflake). It adds native Iceberg support to Postgres:
+
+```sql
+-- Create an Iceberg table — data stored in object storage, metadata in Postgres
+CREATE TABLE my_analytics_table (
+    id BIGINT,
+    event_time TIMESTAMPTZ,
+    payload JSONB
+) USING iceberg;
+```
+
+Key capabilities:
+- **Postgres acts as the Iceberg catalog** — no external catalog service needed
+- **Full Postgres transaction semantics** — writes to Iceberg are transactional
+- **Standard SQL** — INSERT, COPY, and queries work as expected
+- **Query external data** — read Parquet, CSV, JSON directly from S3/Azure/GCS
+
+### pg_incremental
+
+Automated incremental pipelines inside Postgres:
+
+```sql
+SELECT incremental.create_time_interval_pipeline(
+    pipeline_name   := 'sync_to_iceberg',
+    time_interval   := '1 minute',
+    source_table    := 'activity_log',
+    start_time      := (SELECT min(event_time) FROM activity_log),
+    command         := $$
+        INSERT INTO activity_log_iceberg
+        SELECT * FROM activity_log
+        WHERE event_time >= $1 AND event_time < $2
+    $$
+);
+```
+
+Key properties:
+- **Exactly-once semantics** — each time interval is processed once, no duplicates
+- **Backfill on creation** — processes all historical intervals immediately
+- **Continuous** — after backfill, processes new intervals as they complete
+- **Built on pg_cron** — no external scheduler needed
+
+### Catalog Integration
+
+Snowflake connects to the Postgres-managed Iceberg catalog:
+
+```sql
+CREATE CATALOG INTEGRATION my_postgres_catalog
+  CATALOG_SOURCE    = SNOWFLAKE_POSTGRES
+  TABLE_FORMAT      = ICEBERG
+  CATALOG_NAMESPACE = 'public'
+  REST_CONFIG = (
+    POSTGRES_INSTANCE = 'MY_INSTANCE'
+    CATALOG_NAME      = 'postgres'
+  )
+  ENABLED = TRUE;
+```
+
+Then create an Iceberg table that reads from it:
+
+```sql
+CREATE ICEBERG TABLE my_snowflake_table
+    CATALOG = 'my_postgres_catalog'
+    CATALOG_TABLE_NAME = 'my_iceberg_table_in_postgres';
+
+ALTER ICEBERG TABLE my_snowflake_table SET AUTO_REFRESH = TRUE;
+```
+
+### The Zero-ETL Value Proposition
+
+Traditional approach:
+```
+Postgres → CDC tool (Debezium) → Kafka → Connector → Staging → dbt → Analytics
+```
+
+With Snowflake Postgres + pg_lake:
+```
+Postgres → pg_lake (Iceberg) → Snowflake reads directly
+```
+
+No Kafka, no Debezium, no Fivetran, no Airbyte, no staging tables, no scheduled extracts. The data flows through open standards (Iceberg/Parquet on object storage) with no proprietary middleware.
+
+---
+
+## Data Model
+
+### Portal Schema (Postgres)
+
+```sql
+-- Mutable operational tables (serve the web application)
+portal_users          -- 20K rows, frequent UPDATEs (last_login, preferences)
+meter_readings        -- ~15K rows/month, INSERT with validation
+tariff_orders         -- ~3K rows/month, status lifecycle
+service_requests      -- ~5K rows/month, open/close tracking
+
+-- Analytics export (append-only, replicated to Snowflake)
+portal_activity_log   -- ~60K rows/60 days, one per user action
+```
+
+### Activity Log Schema
+
+Each portal action produces one log entry:
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `activity_id` | BIGSERIAL | Auto-incrementing primary key |
+| `customer_key` | INT | Links to customer_dim in Snowflake |
 | `event_time` | TIMESTAMPTZ | When the action occurred |
-| `event_type` | TEXT | `LOGIN`, `METER_READING`, `TARIFF_CHANGE`, `SERVICE_REQUEST` |
-| `event_detail` | JSONB | Action-specific payload (meter type, kWh, requested product, etc.) |
-| `city` | TEXT | Customer's city (denormalized) |
-| `region` | TEXT | North / South / East / West (denormalized) |
-| `customer_type` | TEXT | Privatkunde / Kleingewerbe / Gewerbekunde (denormalized) |
+| `event_type` | TEXT | LOGIN, METER_READING, TARIFF_CHANGE, SERVICE_REQUEST |
+| `event_detail` | JSONB | Flexible payload (meter value, product name, ticket subject) |
+| `city` | TEXT | Denormalized for analytics (no joins needed in Snowflake) |
+| `region` | TEXT | Nord, Süd, West, Ost |
+| `customer_type` | TEXT | Privatkunde, Kleingewerbe, Gewerbekunde |
 
-Append-only, denormalized — ideal for Iceberg replication. No joins needed at query time.
+### Gold Layer (Snowflake)
 
-## Snowflake Features Introduced
+The `MART_PORTAL_ENGAGEMENT` table aggregates daily:
 
-| Feature | Role in This Module |
-|---------|-------------------|
-| **Snowflake Postgres** | Fully managed PostgreSQL — portal transactional backend |
-| **pg_lake** | Native Iceberg table support in Postgres |
-| **pg_incremental** | Exactly-once incremental sync (heap → Iceberg, every 1 min) |
-| **Catalog Integration** | Snowflake reads Postgres-managed Iceberg catalog |
-| **Auto-Refresh** | Polls Iceberg catalog every 30s for new snapshots |
-| **Semantic View** | Portal engagement metrics queryable in natural language |
+| Column | Description |
+|--------|-------------|
+| `activity_date` | Day |
+| `region` | Geographic region |
+| `customer_type` | Customer segment |
+| `event_type` | Action type |
+| `event_count` | Total events |
+| `unique_customers` | Distinct active customers |
 
-## Files
+---
 
-| File | Purpose |
-|------|---------|
-| `hol-module2.ipynb` | Snowsight notebook — provisions Postgres, sets up catalog integration, creates analytics model + semantic view |
-| `portal_postgres_setup.sql` | Schema, indexes, pg_lake extensions, Iceberg mirror table, pg_incremental pipeline |
-| `portal_seed_data.sql` | Pre-generated INSERT statements for 20K users + 60 days of activity (timestamps use `now() - interval` — always relative) |
+## Demo Questions
 
-## Quick Start
+After deployment, the Intelligence Agent can answer portal engagement questions using the `portal_analyst` tool:
 
-1. Run Module 1 (`hol/epower_hol.ipynb`) first
-2. Open `hol-module2.ipynb` in Snowsight and run through Sections 1-3
-3. In your Postgres client:
-   ```bash
-   psql service=my_epower_portal -f portal_postgres_setup.sql
-   psql service=my_epower_portal -f portal_seed_data.sql
-   ```
-4. Wait ~2 minutes for Iceberg sync, then continue the notebook (Sections 5-8)
+| Question | What It Tests |
+|----------|---------------|
+| "How many customers used the portal this week?" | Basic engagement |
+| "Welche Region hat die höchste Portal-Nutzung?" | Regional comparison (German) |
+| "Show me the trend of meter reading submissions over the last 30 days" | Time-series |
+| "What are the most popular tariff switches?" | Tariff change analysis |
+| "Compare portal engagement between residential and business customers" | Segment comparison |
+| "Which customers submit meter readings but never changed their tariff?" | Cross-tool (portal + sales) |
 
-**Runtime:** ~15 minutes
+---
+
+## Prerequisites
+
+- Module 1 (`epower_hol_main.ipynb`) must be fully deployed
+- Snowflake Postgres must be enabled in your account
+- `EPOWER_ROLE` with appropriate privileges (inherited from Module 1 setup)
+
+---
+
+## How to Run
+
+1. Open `hol-module2/hol-module2.ipynb` in the Snowflake Workspace
+2. Select the `EPOWER_COMPUTE` warehouse
+3. **Run All** cells (~10 minutes)
+
+The notebook creates the Postgres instance, seeds data, sets up pg_lake replication, connects Snowflake via catalog integration, builds the Gold mart and Semantic View, and updates the Intelligence Agent.
+
+---
+
+## Relationship to Module 1
+
+| | Module 1 (epower_hol_main.ipynb) | Module 2 (hol-module2.ipynb) |
+|---|---|---|
+| **Focus** | Data engineering + Agentic AI | Operational OLTP + zero-ETL replication |
+| **Data source** | CSV files, external API | Snowflake Postgres (web app backend) |
+| **Key Snowflake features** | dbt, Semantic Views, Cortex Agent, Cortex Search | Snowflake Postgres, pg_lake, Iceberg, Catalog Integration |
+| **Standalone?** | Yes | No — requires Module 1 for customer/product data |
+| **Runtime** | ~15 minutes | ~10 minutes |
+| **Agent tools after** | 12 tools (7 analyst + 4 search + chart) | 13 tools (+portal_analyst) |
+
+---
+
+## References
+
+- [Introducing pg_lake](https://www.snowflake.com/en/engineering-blog/pg-lake-postgres-lakehouse-integration/) — Snowflake Engineering Blog
+- [Sync Data from Postgres to Snowflake with Iceberg and pg_lake](https://www.snowflake.com/en/developers/guides/sync-data-from-postgres-to-snowflake-with-iceberg-and-pg-lake/) — Developer Guide
+- [pg_lake GitHub Repository](https://github.com/Snowflake-Labs/pg_lake) — Source code (Apache 2.0)
+- [Building a True Lakehouse with Snowflake Postgres and pg_lake](https://medium.com/snowflake/building-a-true-lakehouse-via-snowflake-postgres-and-pg-lake-4c798c6fe5f7) — Tutorial
+
+---
+
+*EPOWER Module 2 — Snowflake Postgres + pg_lake — Powered by Snowflake*

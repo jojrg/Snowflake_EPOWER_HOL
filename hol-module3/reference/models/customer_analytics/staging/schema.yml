@@ -1,0 +1,38 @@
+version: 2
+
+models:
+  - name: stg_cancellations
+    description: Contract cancellations enriched with customer and product context
+    columns:
+      - name: cancellation_id
+        description: Unique cancellation identifier
+        tests:
+          - unique
+          - not_null
+      - name: customer_key
+        description: Customer identifier (FK to customer_dim)
+        tests:
+          - not_null
+      - name: product_key
+        description: Product identifier (FK to product_dim)
+        tests:
+          - not_null
+
+  - name: stg_surveys
+    description: NPS surveys enriched with customer context and segment classification
+    columns:
+      - name: survey_id
+        description: Unique survey response identifier
+        tests:
+          - unique
+          - not_null
+      - name: customer_key
+        description: Customer identifier (FK to customer_dim)
+        tests:
+          - not_null
+      - name: nps_segment
+        description: "NPS classification: Promoter (9-10), Passive (7-8), Detractor (0-6)"
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['Promoter', 'Passive', 'Detractor']

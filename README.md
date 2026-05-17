@@ -4,7 +4,7 @@
 
 **A hands-on lab for building an Agentic AI application grounded in enterprise data — powered by Snowflake.**
 
-This demo comes with a notebook (`hol/epower_hol.ipynb`) that walks you through building an end-to-end Agentic AI application on Snowflake. The notebook creates all database objects, loads data, deploys the dbt project, and configures the Intelligence Agent. By completing the lab, you gain practical experience with:
+This demo comes with a notebook (`hol-main/epower_hol_main.ipynb`) that walks you through building an end-to-end Agentic AI application on Snowflake. The notebook creates all database objects, loads data, deploys the dbt project, and configures the Intelligence Agent. By completing the lab, you gain practical experience with:
 
 - **Snowflake Data Engineering** — dbt projects deployed natively in Snowflake, medallion / lakehouse architecture (Bronze → Silver → Gold), scheduled tasks for pipeline execution, and real-time API ingestion
 - **Snowflake AI for Agentic Applications** — making enterprise data AI-ready and leveraging Cortex Agent, Semantic Views (text-to-SQL), and Cortex Search (RAG) to build an intelligent agent that is grounded in governed enterprise data
@@ -17,7 +17,7 @@ The result: a fully functional **EPOWER Intelligence Agent** that delivers deep 
 
 ## Required Privileges
 
-The setup notebook (`hol/epower_hol.ipynb`) requires elevated privileges for three specific cells (§1, §2, §10). The following account-level privileges are needed — all are inherited by default through the **ACCOUNTADMIN** role:
+The setup notebook (`hol-main/epower_hol_main.ipynb`) requires elevated privileges for three specific cells (§1, §2, §10). The following account-level privileges are needed — all are inherited by default through the **ACCOUNTADMIN** role:
 
 | Privilege | Actions Enabled | Notebook Section |
 |-----------|----------------|-----------------|
@@ -79,7 +79,7 @@ The workspace clones the repository into Snowflake, making all files (notebooks,
 
 ### Step 3: Run Setup Notebook
 
-1. Open `hol/epower_hol.ipynb` in the Workspace
+1. Open `hol-main/epower_hol_main.ipynb` in the Workspace
 2. Select a warehouse (any size works; the notebook creates its own `EPOWER_COMPUTE` warehouse)
 3. **Run All** cells (~15 minutes)
 
@@ -94,13 +94,13 @@ Use `demo_flow.md` as your guided demo script (12 questions, 4 acts).
 To completely remove all demo objects from your account, run the cleanup script:
 
 ```sql
--- Run cleanup_reset/epower_cleanup.sql
+-- Run hol-main/epower_cleanup.sql
 -- This will:
 --   1. Remove the agent from Snowflake Intelligence
 --   2. Drop all integrations, the database, warehouse, and role
 ```
 
-See [`cleanup_reset/epower_cleanup.sql`](cleanup_reset/epower_cleanup.sql) for the full teardown script.
+See [`hol-main/epower_cleanup.sql`](hol-main/epower_cleanup.sql) for the full teardown script.
 
 ---
 
@@ -574,14 +574,31 @@ Snowflake_EPower_Demo/
 ├── README.md                        # This file — architecture, setup, business context
 ├── demo_flow.md                     # Guided demo walkthrough (12 questions, 4 acts)
 │
-├── hol/                             # ── Hands-On Lab ──
-│   └── epower_hol.ipynb             # Main setup notebook — run this to build everything
-│
-├── cleanup_reset/                   # ── Cleanup & Reset ──
+├── hol-main/                        # ── Hands-On Lab (Main Module) ──
+│   ├── epower_hol_main.ipynb        # Main setup notebook — run this to build everything
 │   └── epower_cleanup.sql           # Teardown: drop all demo objects
 │
+├── hol-module2/                     # ── Module 2: Snowflake Postgres + pg_lake ──
+│   ├── README-module2.md            # Module 2 documentation
+│   ├── hol-module2.ipynb            # Snowsight notebook — Postgres + Iceberg pipeline
+│   ├── portal_postgres_setup.sql    # Schema, indexes, pg_lake, pg_incremental
+│   ├── portal_seed_data.sql         # 20K users + 60 days of activity data
+│   ├── cleanup-module2-snowflake.sql # Snowflake-side teardown
+│   ├── cleanup-module2-postgres.sql # Postgres-side teardown
+│   └── cleanup-module2.ipynb        # Cleanup notebook
+│
+├── hol-module3/                     # ── Module 3: Cortex Code + dbt ──
+│   ├── README-module3.md            # Module 3 documentation
+│   ├── hol-module3.ipynb            # Snowsight notebook — CoCo-driven dbt extension
+│   ├── cleanup-module3.sql          # Module 3 teardown
+│   └── reference/                   # Expected CoCo outputs (presenter safety net)
+│       ├── models/                  #   dbt staging + mart models
+│       ├── semantic_view.sql        #   Semantic View SQL
+│       ├── agent_definition.sql     #   Agent with all tools
+│       └── config_updates.txt       #   sources.yml + dbt_project.yml changes
+│
 ├── demo_data/
-│   ├── structured_data/             # 23 CSV files loaded into EPOWER_GOLD
+│   ├── structured_data/             # 25 CSV files loaded into EPOWER_GOLD
 │   │   ├── customer_dim.csv         #   20K customers (residential & business)
 │   │   ├── product_dim.csv          #   15 products, 6 categories, CAPEX/OPEX
 │   │   ├── sales_fact.csv           #   ~80K contract records
@@ -589,10 +606,11 @@ Snowflake_EPower_Demo/
 │   │   ├── customer_products.csv    #   Product ownership per customer
 │   │   ├── service_logs.csv         #   ~10K service tickets
 │   │   ├── hr_employee_fact.csv     #   12K HR records
-│   │   ├── employee_dim.csv         #   Employee profiles
 │   │   ├── finance_transactions.csv #   30K financial transactions
 │   │   ├── marketing_campaign_fact.csv  # 16K campaign metrics
-│   │   └── ...                      #   + 13 dimension tables (region, channel, etc.)
+│   │   ├── contract_cancellations.csv   # ~2,400 cancellations (Module 3)
+│   │   ├── customer_surveys.csv     #   5,000 NPS surveys (Module 3)
+│   │   └── ...                      #   + 14 dimension tables (region, channel, etc.)
 │   │
 │   └── unstructured_data/           # 14 PDF/MD documents for Cortex Search (RAG)
 │       ├── energy/                  #   5 docs: Green Power TCs, VPP program, pricing,
@@ -626,10 +644,24 @@ Snowflake_EPower_Demo/
 │               ├── mart_day_ahead_prices.sql # EUR/kWh, hour_of_day, day_of_week
 │               └── schema.yml                # Column docs + tests
 │
+├── epower_dbt_portal/               # dbt project for portal analytics (Module 2)
+│   ├── dbt_project.yml              #   Project config: epower_portal_analytics
+│   ├── profiles.yml                 #   Connection profile
+│   ├── macros/
+│   │   └── generate_schema_name.sql #   Schema routing
+│   └── models/
+│       ├── sources.yml              #   Portal activity log source
+│       └── portal/marts/
+│           ├── mart_portal_engagement.sql   # Daily engagement metrics
+│           └── schema.yml                   # Column docs + tests
+│
 ├── generators/                      # ── Internal dev tools (not needed for the lab) ──
 │   ├── generate_data.py             # Regenerate structured CSV data
 │   ├── generate_docs.py             # Regenerate unstructured documents
-│   └── create_notebook.py           # Helper: creates notebook scaffold
+│   ├── create_notebook.py           # Helper: creates notebook scaffold
+│   ├── generate_module3_data.py     # Generate Module 3 CSV data (cancellations + surveys)
+│   ├── write_module3_notebook.py    # Generate Module 3 notebook
+│   └── wimmel-prompt.md             # Prompt used to generate the header image
 │
 └── images/
     └── epower_wimmel.jpg            # Header image for README
@@ -639,11 +671,13 @@ Snowflake_EPower_Demo/
 
 | Asset | Purpose | When to Use |
 |-------|---------|-------------|
-| `hol/epower_hol.ipynb` | Creates all Snowflake objects end-to-end | Initial setup — run once |
+| `hol-main/epower_hol_main.ipynb` | Creates all Snowflake objects end-to-end | Initial setup — run once |
+| `hol-module2/hol-module2.ipynb` | Snowflake Postgres + pg_lake pipeline | Module 2 — after Module 1 |
+| `hol-module3/hol-module3.ipynb` | Cortex Code dbt extension + semantic layer | Module 3 — after Module 1 |
 | `demo_flow.md` | 12-question guided demo script (4 acts) | During the demo |
-| `cleanup_reset/epower_cleanup.sql` | Drops all demo objects | Teardown / reset |
+| `hol-main/epower_cleanup.sql` | Drops all demo objects | Teardown / reset |
 | `epower_dbt/` | dbt project with 6 models (medallion architecture) | Deployed by the notebook; edit models here |
-| `demo_data/structured_data/` | 23 CSV files loaded into EPOWER_GOLD | Source data — regenerate with `generators/generate_data.py` |
+| `demo_data/structured_data/` | 25 CSV files loaded into EPOWER_GOLD | Source data — regenerate with `generators/generate_data.py` |
 | `demo_data/unstructured_data/` | 14 PDF/MD documents for RAG search | Source docs — regenerate with `generators/generate_docs.py` |
 
 ---
