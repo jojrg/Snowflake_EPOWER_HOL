@@ -394,6 +394,25 @@ Transforms IoT telemetry from ~4,500 battery storage devices into VPP capacity a
 | **Gold** | `mart_vpp_capacity_hourly` | table | Hourly aggregation by region — active VPP devices, total/avg solar yield, battery SOC, net grid flow |
 | **Gold** | `mart_vpp_price_optimization` | table | Battery arbitrage analysis — joins telemetry with day-ahead prices, calculates margins (70% customer / 30% EPOWER) |
 
+**Key Insights per Gold Table:**
+
+- **`mart_vpp_capacity_hourly`** — Operational VPP fleet overview: How many battery devices are active per region per hour, total and average solar yield across the fleet, aggregate battery state-of-charge (available storage capacity), and net grid flow (is the VPP injecting or drawing from the grid?). Answers questions like: *"Do we have enough distributed capacity in North Germany at 6pm?"*
+
+- **`mart_vpp_price_optimization`** — Financial arbitrage analysis: Joins telemetry with day-ahead electricity spot prices, calculates margin per kWh (buy low / sell high from batteries), splits revenue 70% customer / 30% EPOWER, and identifies optimal charge/discharge windows. Answers questions like: *"How much did our VPP earn customers during the price spike on Tuesday?"*
+
+Together they provide both the **operational** view (capacity, grid stability) and the **commercial** view (revenue, margins) of the virtual power plant program.
+
+#### Sign Conventions (Positive vs. Negative Values)
+
+| Field | Positive | Negative |
+|-------|----------|----------|
+| `grid_import_export_kw` | Importing from grid (consuming) | Exporting to grid (feeding back) |
+| `net_grid_kw` | Region is net-consuming | Region is net-injecting (VPP supplying power) |
+| `price_eur_mwh` | Normal market price | Oversupply — producers pay you to take electricity |
+| `net_margin_eur` | Profit (export revenue > import cost) | Loss (import cost > export revenue) |
+
+The VPP strategy: charge when prices are negative/low, discharge when prices are high → maximizing positive `net_margin_eur`.
+
 #### Smart Battery Strategy (Price-Reactive VPP)
 
 EPOWER's VPP uses a **price-reactive battery strategy** that correlates battery charge/discharge cycles with real day-ahead electricity prices from the German DE-LU bidding zone. The core idea: buy electricity when it's cheap (or even negatively priced), store it, and sell it back to the grid when prices are high.
