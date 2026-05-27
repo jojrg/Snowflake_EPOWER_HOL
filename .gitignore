@@ -24,3 +24,6 @@ credentials.json
 epower_dbt/target/
 epower_dbt/dbt_packages/
 epower_dbt/logs/
+
+# Cortex Code session artifacts
+.snowflake/
