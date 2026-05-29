@@ -1,0 +1,4 @@
+[project]
+name = "epower-assistant"
+requires-python = ">=3.11"
+dependencies = ["plotly"]
