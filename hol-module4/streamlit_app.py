@@ -1,13 +1,14 @@
 import streamlit as st
 import json
+import os
 import requests
 import pandas as pd
 
 st.set_page_config(page_title="EPOWER Assistant", layout="wide")
 
 AGENT_PATH = "/api/v2/databases/EPOWER_DEMO/schemas/EPOWER_GOLD/agents/EPOWER_AGENT:run"
-SNOWFLAKE_HOST = "https://" + st.context.headers.get("host", "localhost")
-AGENT_URL = SNOWFLAKE_HOST + AGENT_PATH
+SNOWFLAKE_HOST = os.getenv("SNOWFLAKE_HOST")
+AGENT_URL = f"https://{SNOWFLAKE_HOST}{AGENT_PATH}"
 
 
 def get_token():
