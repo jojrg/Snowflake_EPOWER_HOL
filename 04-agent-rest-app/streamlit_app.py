@@ -240,17 +240,6 @@ with tab_chat:
                 st.session_state["_pending_prompt"] = starter
                 st.rerun()
 
-    # Chat input
-    pending = st.session_state.pop("_pending_prompt", None)
-    prompt = st.chat_input("Ask the EPOWER Agent...")
-    user_input = pending or prompt
-
-    # Phase 1: User submits a question — store it and rerun to show it
-    if user_input and not st.session_state._processing:
-        st.session_state.chat_messages.append({"role": "user", "content": user_input})
-        st.session_state._processing = True
-        st.rerun()
-
     # Phase 2: Process the pending request (user message is now visible)
     if st.session_state._processing:
         with st.chat_message("assistant"):
@@ -364,6 +353,18 @@ with tab_chat:
 
         st.session_state._processing = False
         st.rerun()
+
+    # Chat input (only shown when not processing — avoids input appearing above spinner)
+    if not st.session_state._processing:
+        pending = st.session_state.pop("_pending_prompt", None)
+        prompt = st.chat_input("Ask the EPOWER Agent...")
+        user_input = pending or prompt
+
+        # Phase 1: User submits a question — store it and rerun to show it
+        if user_input:
+            st.session_state.chat_messages.append({"role": "user", "content": user_input})
+            st.session_state._processing = True
+            st.rerun()
 
     # REST Payload Viewer
     if show_payload and st.session_state.last_request:
