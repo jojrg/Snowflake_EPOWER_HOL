@@ -242,6 +242,7 @@ with tab_chat:
                 collected_charts = []
                 raw_events = []
                 text_placeholder = st.empty()
+                answer_content_index = None
 
                 for line in response.iter_lines(decode_unicode=True):
                     if not line or not line.startswith("data: "):
@@ -255,13 +256,15 @@ with tab_chat:
                     except json.JSONDecodeError:
                         continue
 
-                    for item in event.get("data", {}).get("choices", [{}]):
-                        delta = item.get("delta", {})
-                        for content_item in delta.get("content", []):
+                    # Final completed event contains full structured content
+                    if event.get("status") == "completed" and "content" in event:
+                        for content_item in event["content"]:
                             ctype = content_item.get("type", "")
                             if ctype == "text":
-                                collected_text.append(content_item.get("text", ""))
-                                text_placeholder.markdown("".join(collected_text))
+                                text_val = content_item.get("text", "").strip()
+                                if text_val:
+                                    collected_text = [text_val]
+                                    text_placeholder.markdown(text_val)
                             elif ctype == "table":
                                 table = content_item.get("table", {})
                                 rs = table.get("result_set", {})
@@ -277,6 +280,21 @@ with tab_chat:
                                         collected_charts.append(json.loads(spec))
                                     except json.JSONDecodeError:
                                         pass
+                        continue
+
+                    # Streaming text deltas — identify the answer content_index
+                    # content_index 0 = leading whitespace, 1 = thinking, highest = answer
+                    if "text" in event and "content_index" in event:
+                        idx = event["content_index"]
+                        text_chunk = event["text"]
+                        # Track highest content_index as the answer
+                        if answer_content_index is None or idx > answer_content_index:
+                            if idx > 1 or (idx == 1 and answer_content_index is None):
+                                answer_content_index = idx
+                                collected_text = []
+                        if idx == answer_content_index:
+                            collected_text.append(text_chunk)
+                            text_placeholder.markdown("".join(collected_text))
 
                 final_text = "".join(collected_text) or "Done."
                 text_placeholder.markdown(final_text)
