@@ -12,7 +12,7 @@ Demonstrates the **Cortex Agent REST API** with streaming responses inside a Str
 
 ## Prerequisites
 
-Run the `hol-main/epower_hol_main.ipynb` notebook first. This app depends on:
+Run the `01-agentic-ai-foundation/epower_hol_main.ipynb` notebook first. This app depends on:
 
 - `EPOWER_DEMO.EPOWER_GOLD.SALES_FACT`
 - `EPOWER_DEMO.EPOWER_GOLD.PRODUCT_DIM` / `PRODUCT_CATEGORY_DIM` / `REGION_DIM`
@@ -62,7 +62,7 @@ The app authenticates to the Agent REST API using the container's session token 
 ## File Structure
 
 ```
-hol-module4/
+04-agent-rest-app/
 ├── streamlit_app.py          # Main app (dashboard + chat)
 ├── snowflake.yml             # Container runtime deployment config
 ├── .streamlit/

@@ -4,7 +4,7 @@
 
 **A hands-on lab for building an Agentic AI application grounded in enterprise data — powered by Snowflake.**
 
-This demo comes with a notebook (`hol-main/epower_hol_main.ipynb`) that walks you through building an end-to-end Agentic AI application on Snowflake. The notebook creates all database objects, loads data, deploys the dbt project, and configures the Intelligence Agent. By completing the lab, you gain practical experience with:
+This demo comes with a notebook (`01-agentic-ai-foundation/epower_hol_main.ipynb`) that walks you through building an end-to-end Agentic AI application on Snowflake. The notebook creates all database objects, loads data, deploys the dbt project, and configures the Intelligence Agent. By completing the lab, you gain practical experience with:
 
 - **Snowflake Data Engineering** — dbt projects deployed natively in Snowflake, medallion / lakehouse architecture (Bronze → Silver → Gold), scheduled tasks for pipeline execution, and real-time API ingestion
 - **Snowflake AI for Agentic Applications** — making enterprise data AI-ready and leveraging Cortex Agent, Semantic Views (text-to-SQL), and Cortex Search (RAG) to build an intelligent agent that is grounded in governed enterprise data
@@ -17,7 +17,7 @@ The result: a fully functional **EPOWER Intelligence Agent** that delivers deep 
 
 ## Required Privileges
 
-The setup notebook (`hol-main/epower_hol_main.ipynb`) requires elevated privileges for three specific cells (§1, §2, §10). The following account-level privileges are needed — all are inherited by default through the **ACCOUNTADMIN** role:
+The setup notebook (`01-agentic-ai-foundation/epower_hol_main.ipynb`) requires elevated privileges for three specific cells (§1, §2, §10). The following account-level privileges are needed — all are inherited by default through the **ACCOUNTADMIN** role:
 
 | Privilege | Actions Enabled | Notebook Section |
 |-----------|----------------|-----------------|
@@ -79,7 +79,7 @@ The workspace clones the repository into Snowflake, making all files (notebooks,
 
 ### Step 3: Run Setup Notebook
 
-1. Open `hol-main/epower_hol_main.ipynb` in the Workspace
+1. Open `01-agentic-ai-foundation/epower_hol_main.ipynb` in the Workspace
 2. Select a warehouse (any size works; the notebook creates its own `EPOWER_COMPUTE` warehouse)
 3. **Run All** cells (~15 minutes)
 
@@ -94,13 +94,13 @@ Use `demo_flow.md` as your guided demo script (12 questions, 4 acts).
 To completely remove all demo objects from your account, run the cleanup script:
 
 ```sql
--- Run hol-main/epower_cleanup.sql
+-- Run 01-agentic-ai-foundation/epower_cleanup.sql
 -- This will:
 --   1. Remove the agent from Snowflake Intelligence
 --   2. Drop all integrations, the database, warehouse, and role
 ```
 
-See [`hol-main/epower_cleanup.sql`](hol-main/epower_cleanup.sql) for the full teardown script.
+See [`01-agentic-ai-foundation/epower_cleanup.sql`](01-agentic-ai-foundation/epower_cleanup.sql) for the full teardown script.
 
 ---
 
@@ -588,16 +588,16 @@ GRANT USAGE ON MCP SERVER EPOWER_DEMO.EPOWER_GOLD.EPOWER_MCP_SERVER TO ROLE EPOW
 ## Repository Structure
 
 ```
-Snowflake_EPower_Demo/
+Snowflake_EPOWER_HOL/
 │
 ├── README.md                        # This file — architecture, setup, business context
 ├── demo_flow.md                     # Guided demo walkthrough (12 questions, 4 acts)
 │
-├── hol-main/                        # ── Hands-On Lab (Main Module) ──
+├── 01-agentic-ai-foundation/        # ── Module 1: Data Engineering + Intelligence Agent ──
 │   ├── epower_hol_main.ipynb        # Main setup notebook — run this to build everything
 │   └── epower_cleanup.sql           # Teardown: drop all demo objects
 │
-├── hol-module2/                     # ── Module 2: Snowflake Postgres + pg_lake ──
+├── 02-postgres-zero-etl/            # ── Module 2: Snowflake Postgres + pg_lake ──
 │   ├── README-module2.md            # Module 2 documentation
 │   ├── hol-module2.ipynb            # Snowsight notebook — Postgres + Iceberg pipeline
 │   ├── portal_postgres_setup.sql    # Schema, indexes, pg_lake, pg_incremental
@@ -606,15 +606,16 @@ Snowflake_EPower_Demo/
 │   ├── cleanup-module2-postgres.sql # Postgres-side teardown
 │   └── cleanup-module2.ipynb        # Cleanup notebook
 │
-├── hol-module3/                     # ── Module 3: Cortex Code + dbt ──
+├── 03-dbt-with-cortex-code/         # ── Module 3: AI-Assisted dbt Development ──
 │   ├── README-module3.md            # Module 3 documentation
 │   ├── hol-module3.ipynb            # Snowsight notebook — CoCo-driven dbt extension
-│   ├── cleanup-module3.sql          # Module 3 teardown
-│   └── reference/                   # Expected CoCo outputs (presenter safety net)
-│       ├── models/                  #   dbt staging + mart models
-│       ├── semantic_view.sql        #   Semantic View SQL
-│       ├── agent_definition.sql     #   Agent with all tools
-│       └── config_updates.txt       #   sources.yml + dbt_project.yml changes
+│   └── cleanup-module3.sql          # Module 3 teardown
+│
+├── 04-agent-rest-app/               # ── Module 4: Streamlit Agent Dashboard ──
+│   ├── README.md                    # Module 4 documentation
+│   ├── streamlit_app.py             # Dashboard + Agent Chat (container runtime)
+│   ├── snowflake.yml                # Deployment config (SPCS)
+│   └── .streamlit/config.toml       # Theme
 │
 ├── demo_data/
 │   ├── structured_data/             # 25 CSV files loaded into EPOWER_GOLD
@@ -690,11 +691,12 @@ Snowflake_EPower_Demo/
 
 | Asset | Purpose | When to Use |
 |-------|---------|-------------|
-| `hol-main/epower_hol_main.ipynb` | Creates all Snowflake objects end-to-end | Initial setup — run once |
-| `hol-module2/hol-module2.ipynb` | Snowflake Postgres + pg_lake pipeline | Module 2 — after Module 1 |
-| `hol-module3/hol-module3.ipynb` | Cortex Code dbt extension + semantic layer | Module 3 — after Module 1 |
+| `01-agentic-ai-foundation/epower_hol_main.ipynb` | Creates all Snowflake objects end-to-end | Initial setup — run once |
+| `02-postgres-zero-etl/hol-module2.ipynb` | Snowflake Postgres + pg_lake pipeline | Module 2 — after Module 1 |
+| `03-dbt-with-cortex-code/hol-module3.ipynb` | Cortex Code dbt extension + semantic layer | Module 3 — after Module 1 |
+| `04-agent-rest-app/streamlit_app.py` | Streamlit dashboard + Agent REST API chat | Module 4 — after Module 1 |
 | `demo_flow.md` | 12-question guided demo script (4 acts) | During the demo |
-| `hol-main/epower_cleanup.sql` | Drops all demo objects | Teardown / reset |
+| `01-agentic-ai-foundation/epower_cleanup.sql` | Drops all demo objects | Teardown / reset |
 | `epower_dbt/` | dbt project with 6 models (medallion architecture) | Deployed by the notebook; edit models here |
 | `demo_data/structured_data/` | 25 CSV files loaded into EPOWER_GOLD | Source data — regenerate with `generators/generate_data.py` |
 | `demo_data/unstructured_data/` | 14 PDF/MD documents for RAG search | Source docs — regenerate with `generators/generate_docs.py` |

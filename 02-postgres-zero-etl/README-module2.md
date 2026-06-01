@@ -294,7 +294,7 @@ After deployment, the Intelligence Agent can answer portal engagement questions 
 
 ## How to Run
 
-1. Open `hol-module2/hol-module2.ipynb` in the Snowflake Workspace
+1. Open `02-postgres-zero-etl/hol-module2.ipynb` in the Snowflake Workspace
 2. Select the `EPOWER_COMPUTE` warehouse
 3. **Run All** cells (~10 minutes)
 

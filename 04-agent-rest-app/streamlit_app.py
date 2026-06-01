@@ -186,7 +186,19 @@ with tab_chat:
     st.title("EPOWER Agent Chat")
     st.caption("Ask questions about sales, billing, VPP telemetry, energy prices, or search company documents.")
 
-    show_payload = st.toggle("Show REST API Payloads", value=False)
+    # Toolbar: New Conversation + REST toggle
+    toolbar_left, toolbar_right = st.columns([1, 3])
+    with toolbar_left:
+        if st.session_state.chat_messages:
+            if st.button("New Conversation", type="secondary"):
+                st.session_state.chat_messages = []
+                st.session_state.thread_id = None
+                st.session_state.parent_message_id = 0
+                st.session_state.last_request = None
+                st.session_state.last_response_raw = None
+                st.rerun()
+    with toolbar_right:
+        show_payload = st.toggle("Show REST API Payloads", value=False)
 
     if "chat_messages" not in st.session_state:
         st.session_state.chat_messages = []
@@ -213,16 +225,6 @@ with tab_chat:
             if msg.get("charts"):
                 for c in msg["charts"]:
                     st.vega_lite_chart(c, use_container_width=True)
-
-    # New conversation button
-    if st.session_state.chat_messages:
-        if st.button("New Conversation", type="secondary"):
-            st.session_state.chat_messages = []
-            st.session_state.thread_id = None
-            st.session_state.parent_message_id = 0
-            st.session_state.last_request = None
-            st.session_state.last_response_raw = None
-            st.rerun()
 
     # Starter prompts (only when no messages yet)
     if not st.session_state.chat_messages:
