@@ -7,6 +7,7 @@ import pandas as pd
 st.set_page_config(page_title="EPOWER Assistant", layout="wide")
 
 AGENT_PATH = "/api/v2/databases/EPOWER_DEMO/schemas/EPOWER_GOLD/agents/EPOWER_AGENT:run"
+THREADS_URL_BASE = f"https://{os.getenv('SNOWFLAKE_HOST')}/api/v2/cortex/threads"
 SNOWFLAKE_HOST = os.getenv("SNOWFLAKE_HOST")
 AGENT_URL = f"https://{SNOWFLAKE_HOST}{AGENT_PATH}"
 
@@ -16,12 +17,28 @@ def get_token():
         return f.read().strip()
 
 
+def get_headers():
+    return {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {get_token()}",
+        "X-Snowflake-Authorization-Token-Type": "OAUTH",
+    }
+
+
 def get_session():
     return st.connection("snowflake").session()
 
 
 def run_query(sql):
     return get_session().sql(sql).to_pandas()
+
+
+def create_thread():
+    """Create a new conversation thread and return thread_id."""
+    headers = get_headers()
+    resp = requests.post(THREADS_URL_BASE, headers=headers, json={"origin_application": "EPOWER_APP"})
+    resp.raise_for_status()
+    return resp.json()["thread_id"]
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -82,19 +99,22 @@ with tab_dashboard:
         SELECT
             SUM(ACTIVE_VPP_DEVICES) AS devices,
             ROUND(AVG(AVG_BATTERY_SOC_PCT), 1) AS battery_soc,
-            ROUND(SUM(TOTAL_SOLAR_YIELD_KW), 0) AS solar_kw,
-            ROUND(SUM(NET_GRID_KW), 0) AS grid_kw
+            ROUND(SUM(TOTAL_SOLAR_YIELD_KW), 0) AS solar_kw
         FROM EPOWER_DEMO.EPOWER_GOLD.MART_VPP_CAPACITY_HOURLY
-        WHERE HOUR = (SELECT MAX(HOUR) FROM EPOWER_DEMO.EPOWER_GOLD.MART_VPP_CAPACITY_HOURLY)
+        WHERE HOUR >= DATE_TRUNC('day', CURRENT_TIMESTAMP())
+          AND TOTAL_SOLAR_YIELD_KW > 0
     """)
 
     c1, c2, c3, c4 = st.columns(4)
     if not kpi_sales.empty:
         c1.metric("Total Revenue", f"\u20ac{kpi_sales.iloc[0]['TOTAL_REVENUE']:,.0f}")
         c2.metric("Contracts Sold", f"{int(kpi_sales.iloc[0]['TOTAL_CONTRACTS']):,}")
-    if not vpp_latest.empty:
-        c3.metric("VPP Devices Online", f"{int(vpp_latest.iloc[0]['DEVICES']):,}")
-        c4.metric("Solar Generation", f"{int(vpp_latest.iloc[0]['SOLAR_KW']):,} kW")
+    if not vpp_latest.empty and not vpp_latest.iloc[0].isna().all():
+        c3.metric("VPP Devices (today)", f"{int(vpp_latest.iloc[0]['DEVICES']):,}")
+        c4.metric("Avg Battery SoC", f"{vpp_latest.iloc[0]['BATTERY_SOC']}%")
+    else:
+        c3.metric("VPP Devices", "---")
+        c4.metric("Avg Battery SoC", "---")
 
     st.divider()
 
@@ -162,7 +182,7 @@ with tab_dashboard:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# TAB 2: AGENT CHAT
+# TAB 2: AGENT CHAT (with Threads API)
 # ─────────────────────────────────────────────────────────────────────────────
 with tab_chat:
     st.title("EPOWER Agent Chat")
@@ -176,6 +196,12 @@ with tab_chat:
         st.session_state.last_request = None
     if "last_response_raw" not in st.session_state:
         st.session_state.last_response_raw = None
+    if "thread_id" not in st.session_state:
+        st.session_state.thread_id = None
+    if "parent_message_id" not in st.session_state:
+        st.session_state.parent_message_id = 0
+    if "_processing" not in st.session_state:
+        st.session_state._processing = False
 
     # Display chat history
     for msg in st.session_state.chat_messages:
@@ -204,112 +230,129 @@ with tab_chat:
                 st.session_state["_pending_prompt"] = starter
                 st.rerun()
 
-    # Chat input — always at the bottom
+    # Chat input
     pending = st.session_state.pop("_pending_prompt", None)
     prompt = st.chat_input("Ask the EPOWER Agent...")
     user_input = pending or prompt
 
-    if user_input:
+    # Phase 1: User submits a question — store it and rerun to show it
+    if user_input and not st.session_state._processing:
         st.session_state.chat_messages.append({"role": "user", "content": user_input})
+        st.session_state._processing = True
+        st.rerun()
 
-        api_messages = [
-            {"role": m["role"], "content": [{"type": "text", "text": m["content"]}]}
-            for m in st.session_state.chat_messages
-            if m["role"] == "user"
-        ]
-
-        request_body = {"messages": api_messages, "stream": True}
-        st.session_state.last_request = {
-            "method": "POST",
-            "url": AGENT_URL.split(".com")[-1],
-            "body": request_body,
-        }
-
-        with st.spinner("Agent is thinking..."):
-            try:
-                token = get_token()
-                headers = {
-                    "Content-Type": "application/json",
-                    "Authorization": f"Bearer {token}",
-                    "X-Snowflake-Authorization-Token-Type": "OAUTH",
-                    "Accept": "text/event-stream",
-                }
-                response = requests.post(AGENT_URL, headers=headers, json=request_body, stream=True)
-                response.raise_for_status()
-
-                collected_text = []
-                collected_tables = []
-                collected_charts = []
-                raw_events = []
-                answer_content_index = None
-
-                for line in response.iter_lines(decode_unicode=True):
-                    if not line or not line.startswith("data: "):
-                        continue
-                    payload = line[6:]
-                    if payload.strip() == "[DONE]":
-                        break
-                    try:
-                        event = json.loads(payload)
-                        raw_events.append(event)
-                    except json.JSONDecodeError:
-                        continue
-
-                    # Final completed event — use as authoritative source
-                    if event.get("status") == "completed" and "content" in event:
-                        for content_item in event["content"]:
-                            ctype = content_item.get("type", "")
-                            if ctype == "text":
-                                text_val = content_item.get("text", "").strip()
-                                if text_val:
-                                    collected_text = [text_val]
-                            elif ctype == "table":
-                                table = content_item.get("table", {})
-                                rs = table.get("result_set", {})
-                                meta = rs.get("resultSetMetaData", {})
-                                cols = [r["name"] for r in meta.get("rowType", [])]
-                                data = rs.get("data", [])
-                                if cols and data:
-                                    collected_tables.append({"title": table.get("title", ""), "columns": cols, "data": data})
-                            elif ctype == "chart":
-                                spec = content_item.get("chart", {}).get("chart_spec", "")
-                                if spec:
-                                    try:
-                                        collected_charts.append(json.loads(spec))
-                                    except json.JSONDecodeError:
-                                        pass
-                        continue
-
-                    # Streaming text deltas
-                    if "text" in event and "content_index" in event:
-                        idx = event["content_index"]
-                        if answer_content_index is None or idx > answer_content_index:
-                            if idx >= 2 or (idx == 1 and answer_content_index is None):
-                                answer_content_index = idx
-                                collected_text = []
-
-                final_text = "".join(collected_text) or "No response."
-                # Fix mojibake: agent returns UTF-8 bytes misinterpreted as latin-1
+    # Phase 2: Process the pending request (user message is now visible)
+    if st.session_state._processing:
+        with st.chat_message("assistant"):
+            with st.spinner("Agent is thinking..."):
                 try:
-                    final_text = final_text.encode("latin-1").decode("utf-8")
-                except (UnicodeDecodeError, UnicodeEncodeError):
-                    pass
+                    # Create thread on first message
+                    if st.session_state.thread_id is None:
+                        st.session_state.thread_id = create_thread()
+                        st.session_state.parent_message_id = 0
 
-                st.session_state.chat_messages.append({
-                    "role": "assistant",
-                    "content": final_text,
-                    "tables": collected_tables,
-                    "charts": collected_charts,
-                })
-                st.session_state.last_response_raw = raw_events
+                    # Build request — only send the latest user message (thread has history)
+                    latest_user_msg = st.session_state.chat_messages[-1]["content"]
+                    request_body = {
+                        "thread_id": st.session_state.thread_id,
+                        "parent_message_id": st.session_state.parent_message_id,
+                        "messages": [
+                            {"role": "user", "content": [{"type": "text", "text": latest_user_msg}]}
+                        ],
+                        "stream": True,
+                    }
+                    st.session_state.last_request = {
+                        "method": "POST",
+                        "url": AGENT_PATH,
+                        "body": request_body,
+                    }
 
-            except Exception as e:
-                st.session_state.chat_messages.append({
-                    "role": "assistant",
-                    "content": f"Error: {str(e)}",
-                })
-                st.session_state.last_response_raw = {"error": str(e)}
+                    headers = get_headers()
+                    headers["Accept"] = "text/event-stream"
+                    response = requests.post(AGENT_URL, headers=headers, json=request_body, stream=True)
+                    response.raise_for_status()
 
+                    collected_text = []
+                    collected_tables = []
+                    collected_charts = []
+                    raw_events = []
+                    assistant_message_id = None
+
+                    for line in response.iter_lines(decode_unicode=True):
+                        if not line or not line.startswith("data: "):
+                            continue
+                        payload = line[6:]
+                        if payload.strip() == "[DONE]":
+                            break
+                        try:
+                            event = json.loads(payload)
+                            raw_events.append(event)
+                        except json.JSONDecodeError:
+                            continue
+
+                        # Capture metadata for thread continuation
+                        if "metadata" in event:
+                            meta = event["metadata"]
+                            if meta.get("role") == "assistant" and "message_id" in meta:
+                                assistant_message_id = meta["message_id"]
+
+                        # Final completed event
+                        if event.get("status") == "completed" and "content" in event:
+                            # Extract assistant_message_id from metadata
+                            evt_meta = event.get("metadata", {})
+                            if evt_meta.get("assistant_message_id"):
+                                assistant_message_id = evt_meta["assistant_message_id"]
+
+                            for content_item in event["content"]:
+                                ctype = content_item.get("type", "")
+                                if ctype == "text":
+                                    text_val = content_item.get("text", "").strip()
+                                    if text_val:
+                                        collected_text = [text_val]
+                                elif ctype == "table":
+                                    table = content_item.get("table", {})
+                                    rs = table.get("result_set", {})
+                                    meta_rs = rs.get("resultSetMetaData", {})
+                                    cols = [r["name"] for r in meta_rs.get("rowType", [])]
+                                    data = rs.get("data", [])
+                                    if cols and data:
+                                        collected_tables.append({"title": table.get("title", ""), "columns": cols, "data": data})
+                                elif ctype == "chart":
+                                    spec = content_item.get("chart", {}).get("chart_spec", "")
+                                    if spec:
+                                        try:
+                                            collected_charts.append(json.loads(spec))
+                                        except json.JSONDecodeError:
+                                            pass
+                            continue
+
+                    # Update parent_message_id for next turn
+                    if assistant_message_id:
+                        st.session_state.parent_message_id = assistant_message_id
+
+                    final_text = "".join(collected_text) or "No response."
+                    # Fix mojibake: agent returns UTF-8 bytes misinterpreted as latin-1
+                    try:
+                        final_text = final_text.encode("latin-1").decode("utf-8")
+                    except (UnicodeDecodeError, UnicodeEncodeError):
+                        pass
+
+                    st.session_state.chat_messages.append({
+                        "role": "assistant",
+                        "content": final_text,
+                        "tables": collected_tables,
+                        "charts": collected_charts,
+                    })
+                    st.session_state.last_response_raw = raw_events
+
+                except Exception as e:
+                    st.session_state.chat_messages.append({
+                        "role": "assistant",
+                        "content": f"Error: {str(e)}",
+                    })
+                    st.session_state.last_response_raw = {"error": str(e)}
+
+        st.session_state._processing = False
         st.rerun()
 
     # REST Payload Viewer
