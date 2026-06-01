@@ -177,6 +177,7 @@ with tab_chat:
     if "last_response_raw" not in st.session_state:
         st.session_state.last_response_raw = None
 
+    # Display chat history
     for msg in st.session_state.chat_messages:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
@@ -189,7 +190,7 @@ with tab_chat:
                 for c in msg["charts"]:
                     st.vega_lite_chart(c, use_container_width=True)
 
-    # Starter prompts
+    # Starter prompts (only when no messages yet)
     if not st.session_state.chat_messages:
         st.markdown("**Try one of these:**")
         prompt_cols = st.columns(3)
@@ -203,6 +204,7 @@ with tab_chat:
                 st.session_state["_pending_prompt"] = starter
                 st.rerun()
 
+    # Chat input — always at the bottom
     pending = st.session_state.pop("_pending_prompt", None)
     prompt = st.chat_input("Ask the EPOWER Agent...")
     user_input = pending or prompt
@@ -226,99 +228,101 @@ with tab_chat:
         }
 
         with st.chat_message("assistant"):
+            with st.spinner("Agent is thinking..."):
+                try:
+                    token = get_token()
+                    headers = {
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {token}",
+                        "X-Snowflake-Authorization-Token-Type": "OAUTH",
+                        "Accept": "text/event-stream",
+                    }
+                    response = requests.post(AGENT_URL, headers=headers, json=request_body, stream=True)
+                    response.raise_for_status()
+
+                    collected_text = []
+                    collected_tables = []
+                    collected_charts = []
+                    raw_events = []
+                    answer_content_index = None
+                    first_text_received = False
+
+                    for line in response.iter_lines(decode_unicode=True):
+                        if not line or not line.startswith("data: "):
+                            continue
+                        payload = line[6:]
+                        if payload.strip() == "[DONE]":
+                            break
+                        try:
+                            event = json.loads(payload)
+                            raw_events.append(event)
+                        except json.JSONDecodeError:
+                            continue
+
+                        # Final completed event — use as authoritative source
+                        if event.get("status") == "completed" and "content" in event:
+                            for content_item in event["content"]:
+                                ctype = content_item.get("type", "")
+                                if ctype == "text":
+                                    text_val = content_item.get("text", "").strip()
+                                    if text_val:
+                                        collected_text = [text_val]
+                                elif ctype == "table":
+                                    table = content_item.get("table", {})
+                                    rs = table.get("result_set", {})
+                                    meta = rs.get("resultSetMetaData", {})
+                                    cols = [r["name"] for r in meta.get("rowType", [])]
+                                    data = rs.get("data", [])
+                                    if cols and data:
+                                        collected_tables.append({"title": table.get("title", ""), "columns": cols, "data": data})
+                                elif ctype == "chart":
+                                    spec = content_item.get("chart", {}).get("chart_spec", "")
+                                    if spec:
+                                        try:
+                                            collected_charts.append(json.loads(spec))
+                                        except json.JSONDecodeError:
+                                            pass
+                            continue
+
+                        # Streaming text deltas
+                        if "text" in event and "content_index" in event:
+                            idx = event["content_index"]
+                            if answer_content_index is None or idx > answer_content_index:
+                                if idx >= 2 or (idx == 1 and answer_content_index is None):
+                                    answer_content_index = idx
+                                    collected_text = []
+
+                except Exception as e:
+                    error_msg = f"Error: {str(e)}"
+                    st.error(error_msg)
+                    st.session_state.chat_messages.append({"role": "assistant", "content": error_msg})
+                    st.session_state.last_response_raw = {"error": str(e)}
+                    st.stop()
+
+            # Render final response (after spinner disappears)
+            final_text = "".join(collected_text) or "No response."
+            # Fix mojibake: the agent returns UTF-8 bytes misinterpreted as latin-1
             try:
-                token = get_token()
-                headers = {
-                    "Content-Type": "application/json",
-                    "Authorization": f"Bearer {token}",
-                    "X-Snowflake-Authorization-Token-Type": "OAUTH",
-                    "Accept": "text/event-stream",
-                }
-                response = requests.post(AGENT_URL, headers=headers, json=request_body, stream=True)
-                response.raise_for_status()
+                final_text = final_text.encode("latin-1").decode("utf-8")
+            except (UnicodeDecodeError, UnicodeEncodeError):
+                pass
 
-                collected_text = []
-                collected_tables = []
-                collected_charts = []
-                raw_events = []
-                text_placeholder = st.empty()
-                answer_content_index = None
+            st.markdown(final_text)
 
-                for line in response.iter_lines(decode_unicode=True):
-                    if not line or not line.startswith("data: "):
-                        continue
-                    payload = line[6:]
-                    if payload.strip() == "[DONE]":
-                        break
-                    try:
-                        event = json.loads(payload)
-                        raw_events.append(event)
-                    except json.JSONDecodeError:
-                        continue
+            for t in collected_tables:
+                if t.get("title"):
+                    st.caption(t["title"])
+                st.dataframe(pd.DataFrame(t["data"], columns=t["columns"]), use_container_width=True)
+            for c in collected_charts:
+                st.vega_lite_chart(c, use_container_width=True)
 
-                    # Final completed event contains full structured content
-                    if event.get("status") == "completed" and "content" in event:
-                        for content_item in event["content"]:
-                            ctype = content_item.get("type", "")
-                            if ctype == "text":
-                                text_val = content_item.get("text", "").strip()
-                                if text_val:
-                                    collected_text = [text_val]
-                                    text_placeholder.markdown(text_val)
-                            elif ctype == "table":
-                                table = content_item.get("table", {})
-                                rs = table.get("result_set", {})
-                                meta = rs.get("resultSetMetaData", {})
-                                cols = [r["name"] for r in meta.get("rowType", [])]
-                                data = rs.get("data", [])
-                                if cols and data:
-                                    collected_tables.append({"title": table.get("title", ""), "columns": cols, "data": data})
-                            elif ctype == "chart":
-                                spec = content_item.get("chart", {}).get("chart_spec", "")
-                                if spec:
-                                    try:
-                                        collected_charts.append(json.loads(spec))
-                                    except json.JSONDecodeError:
-                                        pass
-                        continue
-
-                    # Streaming text deltas — identify the answer content_index
-                    # content_index 0 = leading whitespace, 1 = thinking, highest = answer
-                    if "text" in event and "content_index" in event:
-                        idx = event["content_index"]
-                        text_chunk = event["text"]
-                        # Track highest content_index as the answer
-                        if answer_content_index is None or idx > answer_content_index:
-                            if idx > 1 or (idx == 1 and answer_content_index is None):
-                                answer_content_index = idx
-                                collected_text = []
-                        if idx == answer_content_index:
-                            collected_text.append(text_chunk)
-                            text_placeholder.markdown("".join(collected_text))
-
-                final_text = "".join(collected_text) or "Done."
-                text_placeholder.markdown(final_text)
-
-                for t in collected_tables:
-                    if t.get("title"):
-                        st.caption(t["title"])
-                    st.dataframe(pd.DataFrame(t["data"], columns=t["columns"]), use_container_width=True)
-                for c in collected_charts:
-                    st.vega_lite_chart(c, use_container_width=True)
-
-                st.session_state.chat_messages.append({
-                    "role": "assistant",
-                    "content": final_text,
-                    "tables": collected_tables,
-                    "charts": collected_charts,
-                })
-                st.session_state.last_response_raw = raw_events
-
-            except Exception as e:
-                error_msg = f"Error: {str(e)}"
-                st.error(error_msg)
-                st.session_state.chat_messages.append({"role": "assistant", "content": error_msg})
-                st.session_state.last_response_raw = {"error": str(e)}
+            st.session_state.chat_messages.append({
+                "role": "assistant",
+                "content": final_text,
+                "tables": collected_tables,
+                "charts": collected_charts,
+            })
+            st.session_state.last_response_raw = raw_events
 
     # REST Payload Viewer
     if show_payload and st.session_state.last_request:
