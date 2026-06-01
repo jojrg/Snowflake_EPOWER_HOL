@@ -186,6 +186,19 @@ with tab_chat:
     st.title("EPOWER Agent Chat")
     st.caption("Ask questions about sales, billing, VPP telemetry, energy prices, or search company documents.")
 
+    if "chat_messages" not in st.session_state:
+        st.session_state.chat_messages = []
+    if "last_request" not in st.session_state:
+        st.session_state.last_request = None
+    if "last_response_raw" not in st.session_state:
+        st.session_state.last_response_raw = None
+    if "thread_id" not in st.session_state:
+        st.session_state.thread_id = None
+    if "parent_message_id" not in st.session_state:
+        st.session_state.parent_message_id = 0
+    if "_processing" not in st.session_state:
+        st.session_state._processing = False
+
     # Toolbar: New Conversation + REST toggle
     toolbar_left, toolbar_right = st.columns([1, 3])
     with toolbar_left:
@@ -199,19 +212,6 @@ with tab_chat:
                 st.rerun()
     with toolbar_right:
         show_payload = st.toggle("Show REST API Payloads", value=False)
-
-    if "chat_messages" not in st.session_state:
-        st.session_state.chat_messages = []
-    if "last_request" not in st.session_state:
-        st.session_state.last_request = None
-    if "last_response_raw" not in st.session_state:
-        st.session_state.last_response_raw = None
-    if "thread_id" not in st.session_state:
-        st.session_state.thread_id = None
-    if "parent_message_id" not in st.session_state:
-        st.session_state.parent_message_id = 0
-    if "_processing" not in st.session_state:
-        st.session_state._processing = False
 
     # Display chat history
     for msg in st.session_state.chat_messages:
