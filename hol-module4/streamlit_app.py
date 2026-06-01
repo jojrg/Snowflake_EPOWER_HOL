@@ -98,19 +98,17 @@ with tab_dashboard:
     vpp_latest = run_query("""
         SELECT
             SUM(ACTIVE_VPP_DEVICES) AS devices,
-            ROUND(AVG(AVG_BATTERY_SOC_PCT), 1) AS battery_soc,
-            ROUND(SUM(TOTAL_SOLAR_YIELD_KW), 0) AS solar_kw
+            ROUND(AVG(AVG_BATTERY_SOC_PCT), 1) AS battery_soc
         FROM EPOWER_DEMO.EPOWER_GOLD.MART_VPP_CAPACITY_HOURLY
-        WHERE HOUR >= DATE_TRUNC('day', CURRENT_TIMESTAMP())
-          AND TOTAL_SOLAR_YIELD_KW > 0
+        WHERE HOUR = (SELECT MAX(HOUR) FROM EPOWER_DEMO.EPOWER_GOLD.MART_VPP_CAPACITY_HOURLY)
     """)
 
     c1, c2, c3, c4 = st.columns(4)
     if not kpi_sales.empty:
         c1.metric("Total Revenue", f"\u20ac{kpi_sales.iloc[0]['TOTAL_REVENUE']:,.0f}")
         c2.metric("Contracts Sold", f"{int(kpi_sales.iloc[0]['TOTAL_CONTRACTS']):,}")
-    if not vpp_latest.empty and not vpp_latest.iloc[0].isna().all():
-        c3.metric("VPP Devices (today)", f"{int(vpp_latest.iloc[0]['DEVICES']):,}")
+    if not vpp_latest.empty and vpp_latest.iloc[0]['DEVICES'] is not None:
+        c3.metric("VPP Devices", f"{int(vpp_latest.iloc[0]['DEVICES']):,}")
         c4.metric("Avg Battery SoC", f"{vpp_latest.iloc[0]['BATTERY_SOC']}%")
     else:
         c3.metric("VPP Devices", "---")
@@ -215,6 +213,16 @@ with tab_chat:
             if msg.get("charts"):
                 for c in msg["charts"]:
                     st.vega_lite_chart(c, use_container_width=True)
+
+    # New conversation button
+    if st.session_state.chat_messages:
+        if st.button("New Conversation", type="secondary"):
+            st.session_state.chat_messages = []
+            st.session_state.thread_id = None
+            st.session_state.parent_message_id = 0
+            st.session_state.last_request = None
+            st.session_state.last_response_raw = None
+            st.rerun()
 
     # Starter prompts (only when no messages yet)
     if not st.session_state.chat_messages:
