@@ -48,7 +48,9 @@ DROP POSTGRES INSTANCE IF EXISTS MY_EPOWER_PORTAL;
 -- ========================================================================
 -- STEP 4: DROP NETWORK POLICY AND RULE (Module 2)
 -- Now safe — policy is no longer attached to any entity.
+-- Note: USE DATABASE required because BEGIN...END resets session context.
 -- ========================================================================
+USE DATABASE EPOWER_DEMO;
 DROP NETWORK POLICY IF EXISTS EPOWER_PG_POLICY;
 DROP NETWORK RULE IF EXISTS EPOWER_PG_INGRESS;
 
