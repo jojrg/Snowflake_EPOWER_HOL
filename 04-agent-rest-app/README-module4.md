@@ -67,8 +67,26 @@ The app authenticates to the Agent REST API using the container's session token 
 ├── snowflake.yml             # Container runtime deployment config
 ├── .streamlit/
 │   └── config.toml           # Theme (EPOWER blue branding)
-└── README.md                 # This file
+└── README-module4.md         # This file
 ```
+
+## Cleanup
+
+To remove the Streamlit app:
+
+1. In Snowsight, navigate to **Projects » Streamlit**
+2. Find `EPOWER_ASSISTANT` and click the **...** menu → **Drop**
+
+Or via SQL:
+
+```sql
+USE ROLE EPOWER_ROLE;
+DROP STREAMLIT IF EXISTS EPOWER_DEMO.EPOWER_GOLD.EPOWER_ASSISTANT;
+```
+
+No other objects are created by Module 4 — the app only reads from existing tables and calls the existing agent. The full cleanup script (`01-agentic-ai-foundation/epower_cleanup.sql`) handles this automatically when dropping the `EPOWER_DEMO` database.
+
+---
 
 ## Deploying to Other Users
 

@@ -1,0 +1,329 @@
+{
+  "title": "EPOWER Energy Intelligence — Complete Demo Wimmel Picture",
+  "description": "Specification for generating a Wimmel-style illustration covering all 4 modules of the EPOWER Hands-On Lab. The picture visualizes EPOWER's business model as a German energy retailer and the Snowflake AI & Data Platform capabilities that power it.",
+  "format": {
+    "aspect_ratio": "16:9",
+    "orientation": "landscape",
+    "style": "Friendly, modern Wimmel-style (Wimmelbild) vector art with clean lines and vivid colors. Approachable, optimistic, slightly playful — like a tech company infographic crossed with a Where's Waldo scene. NOT overly futuristic or intimidating. People look happy, relaxed, collaborative. The AI agent is small, humble, and helpful — not dominant or scary.",
+    "mood": "Positive, optimistic, grounded, fun. Shows technology serving people and the planet. The feeling of a thriving community powered by smart energy and intelligent data.",
+    "color_palette": {
+      "primary_accent": "#29B5E8 (Snowflake blue)",
+      "energy_green": "Renewable/solar elements, positive outcomes",
+      "bronze": "Copper/brown for raw data layer",
+      "silver": "Cool grey for transformation layer",
+      "gold": "Rich gold for business-ready analytics",
+      "warm_earth": "German architectural details, community scenes",
+      "overall": "Bright, warm, professional but approachable"
+    }
+  },
+  "layout": {
+    "description": "The picture tells the story from left to right: Physical Energy World (left) → Snowflake Platform (center) → Business Operations & Applications (right). The bottom runs a data pipeline connecting everything. The top shows the intelligent agent serving users.",
+    "zones": {
+      "top_center": "Snowflake Intelligence Agent + natural language questions",
+      "center": "Snowflake Platform (medallion layers + tools)",
+      "left": "Physical energy world (homes, VPP, prosumers, grid)",
+      "right": "Business operations (HQ, portal, apps, control room)",
+      "bottom": "Data pipelines, integrations, and operational flows"
+    }
+  },
+  "scenes": {
+    "center_hub": {
+      "title": "Snowflake AI & Data Platform",
+      "description": "Large central hub representing Snowflake — the data and AI brain of EPOWER. Structured as three visible layers stacked like floors.",
+      "elements": [
+        {
+          "name": "Bronze Layer",
+          "visual": "Copper/brown tinted floor with raw data flowing in — CSV files, IoT sensor streams, API data, PDF documents landing",
+          "label": "Raw Ingestion"
+        },
+        {
+          "name": "Silver Layer",
+          "visual": "Silver/grey tinted floor with dbt logo, data being cleaned, filtered, enriched, joined",
+          "label": "Cleaning & Transformation"
+        },
+        {
+          "name": "Gold Layer",
+          "visual": "Gold tinted floor with polished charts, KPIs, semantic models glowing with structure",
+          "label": "Business-Ready Analytics"
+        }
+      ]
+    },
+    "top_center_agent": {
+      "title": "EPOWER Intelligence Agent",
+      "description": "A friendly, humble, small AI assistant figure sitting on top of the Snowflake hub. NOT a large intimidating robot — more like a helpful librarian or concierge. Approachable, smiling, with small tool icons around it.",
+      "visual_guidelines": "Small figure, warm colors, open posture, NOT glowing eyes or laser beams. Think friendly neighborhood helper, not sci-fi overlord.",
+      "elements": [
+        {
+          "name": "Natural Language Questions",
+          "visual": "Speech bubbles from business users in both German and English: 'Zeige mir den Umsatz nach Region', 'Show VPP margins by price zone', 'Wie hoch ist die Kundigungsrate?'",
+          "purpose": "Shows the agent understands business language"
+        },
+        {
+          "name": "Semantic Views (left arm/tool)",
+          "visual": "7 small glowing data lenses labeled: Sales, Billing, Service, Customer, HR, VPP Telemetry, Market Prices, Portal",
+          "label": "Text-to-SQL"
+        },
+        {
+          "name": "Cortex Search (right arm/tool)",
+          "visual": "Magnifying glass over stacked documents with badges: '9 Search Services'",
+          "label": "RAG over Documents"
+        },
+        {
+          "name": "MCP Server",
+          "visual": "Universal plug/socket icon labeled 'MCP — 12+ Tools' connecting to external AI clients",
+          "label": "Model Context Protocol"
+        }
+      ]
+    },
+    "left_energy_world": {
+      "title": "The Energy World (Physical Reality)",
+      "description": "German residential neighborhood showing EPOWER's 360-degree energy strategy in action.",
+      "elements": [
+        {
+          "name": "Prosumer Homes",
+          "visual": "Houses with solar panels on rooftops, battery storage units in garages (labeled 'ePulse VPP'), ePulse IoT gateway sending data signals toward Snowflake hub",
+          "details": ["Heat pump next to house (no gas!)", "EV wallbox with electric car charging", "Smart meter on wall showing kWh"]
+        },
+        {
+          "name": "VPP Revenue Split",
+          "visual": "70/30 coin-split icon near battery — 70% flowing to homeowner, 30% to EPOWER",
+          "label": "Customer Value + EPOWER Revenue"
+        },
+        {
+          "name": "Bidirectional Energy Flow",
+          "visual": "Arrows going both TO and FROM the grid, showing prosumers as both consumers and producers"
+        },
+        {
+          "name": "Traditional Customers",
+          "visual": "Houses connected to grid only (no solar, no battery). Power lines connecting to main grid.",
+          "label": "Consumer — Grid Only"
+        },
+        {
+          "name": "Renewable Landscape",
+          "visual": "Wind turbines and solar farm in background, green rolling hills, blue sky with white clouds"
+        }
+      ]
+    },
+    "right_business_ops": {
+      "title": "Business Operations & Applications",
+      "description": "EPOWER's headquarters, customer portal, and control room — showing how the platform delivers business value.",
+      "elements": [
+        {
+          "name": "EPOWER Headquarters",
+          "visual": "Modern office building with ePOWER logo. Inside: customer service center (agents at screens with sentiment bubbles), sales dashboard on wall, HR department corner",
+          "departments": ["Customer Service", "Sales", "HR", "Marketing"]
+        },
+        {
+          "name": "Customer Portal 'Mein EPOWER' (Module 2)",
+          "visual": "A tablet/laptop screen showing the customer self-service portal. Customer submitting meter reading, switching tariff. Small Postgres elephant icon connecting to a flowing Iceberg symbol, data flowing to Snowflake.",
+          "label": "Mein EPOWER Portal",
+          "module": 2
+        },
+        {
+          "name": "Streamlit Agent Dashboard (Module 4)",
+          "visual": "A sleek screen/monitor showing a chat interface with streaming text appearing (like ChatGPT). Dashboard tab with sales charts and VPP KPIs. Small container/docker icon in corner.",
+          "label": "Agent REST App",
+          "module": 4
+        },
+        {
+          "name": "VPP Control Room",
+          "visual": "Large screens showing day-ahead electricity prices (time-series with red/green zones), battery charge/discharge diagram ('Buy Low → Store → Sell High')",
+          "label": "Virtual Power Plant Control"
+        },
+        {
+          "name": "Smart Home Shop",
+          "visual": "Small retail area with products on display: solar panels, batteries, heat pumps, wallboxes, smart thermostats. Customers browsing.",
+          "label": "360° Energy Products"
+        }
+      ]
+    },
+    "bottom_pipeline": {
+      "title": "Data Pipeline & Integration Layer",
+      "description": "Visible data flow running along the bottom showing how data moves from source to insight.",
+      "elements": [
+        {
+          "name": "External APIs",
+          "visual": "Cloud icon labeled 'Energy-Charts API / Fraunhofer ISE' sending real EPEX day-ahead prices",
+          "flow_direction": "left to center"
+        },
+        {
+          "name": "IoT Telemetry",
+          "visual": "Signal waves from ePulse gateways flowing as data streams, label '~6.5M rows / 60 days'",
+          "flow_direction": "left to center"
+        },
+        {
+          "name": "Postgres Zero-ETL (Module 2)",
+          "visual": "Postgres elephant icon → pg_lake label → Iceberg logo → arrow to Snowflake. No Kafka, no Debezium — just a clean direct path.",
+          "label": "Zero-ETL: Postgres → Iceberg → Snowflake",
+          "module": 2
+        },
+        {
+          "name": "dbt Pipeline",
+          "visual": "dbt logo with arrows showing Bronze → Silver → Gold. Label '6 models, Medallion Architecture'. Clock icon: 'Daily Task 5:00 PM CET'",
+          "flow_direction": "center internal"
+        },
+        {
+          "name": "Cortex Code / CoCo (Module 3)",
+          "visual": "A developer at a laptop with an AI sparkle, code appearing on screen. Small speech bubble: 'Extend the pipeline with churn analysis'. dbt models materializing.",
+          "label": "AI-Assisted Development",
+          "module": 3
+        },
+        {
+          "name": "CSV & Documents",
+          "visual": "Stacks of CSV files (labeled '25 files, ~850K rows') and PDF documents (labeled '14 docs') flowing into Bronze layer"
+        }
+      ]
+    }
+  },
+  "wimmel_details": {
+    "description": "Small scattered details that reward close inspection — making it a true Wimmelbild.",
+    "items": [
+      "A cat sleeping on a warm solar panel",
+      "A bird perched on a wind turbine blade",
+      "A dog sitting next to a heat pump (enjoying the warmth)",
+      "Kids riding bikes past an EV charging station",
+      "A delivery person on an e-cargo bike",
+      "A person reading their energy bill on a phone (smiling — VPP savings!)",
+      "An elderly couple looking at their smart home display showing energy savings",
+      "A data engineer high-fiving the small AI agent after a successful dbt run",
+      "Someone at a cafe using the customer portal on their laptop",
+      "A presenter with a clipboard labeled 'demo_flow.md — 12 Questions, 4 Acts'",
+      "A small garden with vegetables growing (sustainable living theme)",
+      "Recycling bins near houses (environmental awareness)",
+      "A neighborhood BBQ with solar-powered string lights",
+      "Children drawing a sun on the sidewalk with chalk"
+    ]
+  },
+  "text_labels": {
+    "banners_and_signs": [
+      "ePOWER — Retail Energy Services",
+      "Snowflake Intelligence & Cortex AI Agents",
+      "Making Enterprise Data AI-Ready",
+      "From Data to Decisions — Grounded in Governed Data",
+      "Deep Insights & Task-Oriented Outcomes"
+    ],
+    "component_labels": [
+      "Virtual Power Plant",
+      "Semantic Views",
+      "Cortex Search",
+      "Cortex Agent",
+      "dbt Pipelines",
+      "MCP Server",
+      "Snowflake Postgres",
+      "pg_lake",
+      "Iceberg",
+      "Cortex Code",
+      "Container Runtime",
+      "Agent REST API"
+    ],
+    "metrics_labels": [
+      "9 Search Services",
+      "8 Semantic Views",
+      "13+ MCP Tools",
+      "6 dbt Models",
+      "6 Business Domains"
+    ],
+    "speech_bubbles_german_english": [
+      "Zeige mir den Umsatz nach Region",
+      "Show VPP margins by price zone",
+      "Wie hoch ist die Kundigungsrate?",
+      "How many customers used the portal this week?",
+      "Welche Kunden haben Warmepumpen?",
+      "Compare NPS scores between regions"
+    ]
+  },
+  "modules_represented": {
+    "module_1_agentic_foundation": {
+      "location": "Center (Snowflake hub) + Agent on top",
+      "key_visuals": [
+        "Medallion layers (Bronze/Silver/Gold)",
+        "Intelligence Agent with Semantic Views + Cortex Search",
+        "dbt pipeline and Daily Task",
+        "MCP Server portal",
+        "Energy-Charts API integration",
+        "Git/Workspace connection"
+      ]
+    },
+    "module_2_postgres_zero_etl": {
+      "location": "Right side (portal) + Bottom pipeline (Postgres → Iceberg flow)",
+      "key_visuals": [
+        "Customer portal 'Mein EPOWER' on tablet/laptop",
+        "Postgres elephant icon",
+        "pg_lake label with Iceberg symbol",
+        "Clean direct path (no middleware) — 'Zero-ETL'",
+        "Activity log flowing to Snowflake",
+        "Portal users: meter reading, tariff switch, service request"
+      ]
+    },
+    "module_3_cortex_code": {
+      "location": "Bottom center (developer scene)",
+      "key_visuals": [
+        "Developer with AI sparkle/CoCo at laptop",
+        "Code materializing on screen",
+        "Speech bubble with business-level prompt",
+        "New dbt models appearing (churn, NPS)",
+        "Semantic view being created conversationally"
+      ]
+    },
+    "module_4_agent_rest_app": {
+      "location": "Right side (app screen/monitor)",
+      "key_visuals": [
+        "Streamlit dashboard with charts + KPIs",
+        "Chat interface with streaming text (typewriter effect)",
+        "Container/SPCS icon",
+        "SSE streaming arrows from Agent to UI",
+        "REST API payload hint (JSON brackets)"
+      ]
+    }
+  },
+  "business_value_narrative": {
+    "description": "The picture should tell the story of business value, not just technology. Each zone demonstrates a business outcome enabled by Snowflake.",
+    "value_stories": [
+      {
+        "scene": "VPP homes with revenue split",
+        "business_value": "Customers earn money from their batteries. EPOWER gets recurring revenue. Grid becomes more stable.",
+        "snowflake_enabler": "Real-time IoT analytics + price optimization via dbt pipelines"
+      },
+      {
+        "scene": "Agent answering business questions",
+        "business_value": "Any employee can get insights instantly — no waiting for analyst reports, no SQL skills needed.",
+        "snowflake_enabler": "Cortex Agent + Semantic Views + Cortex Search"
+      },
+      {
+        "scene": "Customer portal with zero-ETL",
+        "business_value": "Operational data instantly available for analytics — no ETL pipelines to build or maintain.",
+        "snowflake_enabler": "Snowflake Postgres + pg_lake + Iceberg"
+      },
+      {
+        "scene": "Developer with Cortex Code",
+        "business_value": "New data sources onboarded in minutes, not days. Data team velocity dramatically increased.",
+        "snowflake_enabler": "Cortex Code AI-assisted development"
+      },
+      {
+        "scene": "Streamlit dashboard with chat",
+        "business_value": "Custom applications built on Agent REST API — embed intelligence anywhere.",
+        "snowflake_enabler": "Cortex Agent REST API + Container Runtime"
+      },
+      {
+        "scene": "MCP server connecting to external tools",
+        "business_value": "EPOWER's data intelligence accessible from any AI tool — Claude, Cursor, VS Code.",
+        "snowflake_enabler": "Snowflake-managed MCP Server"
+      }
+    ]
+  },
+  "do_not_include": [
+    "Scary or intimidating AI imagery (no glowing red eyes, no Terminator vibes)",
+    "Generic cloud computing imagery without business context",
+    "Abstract data visualizations without connection to energy domain",
+    "Overly complex technical diagrams that look like architecture documents",
+    "Dark or dystopian color schemes",
+    "Any elements unrelated to energy retail / Snowflake AI narrative",
+    "References to 'two-phase' or 'heuristic' telemetry — all VPP data is price-reactive",
+    "Competitors' logos or branding (except subtle real-world VPP references: 1KOMMA5, Sonnen)"
+  ],
+  "generation_notes": {
+    "prompt_style": "Use this JSON as a structured brief for image generation AI (DALL-E, Midjourney, Gemini Imagen). Convert the relevant sections into a natural language prompt, emphasizing the mood, layout, and key scenes.",
+    "iterations": "The picture may need 2-3 iterations. First get the layout and mood right, then refine labels and details.",
+    "resolution": "Target 3840x2160 (4K) for print quality, export at 1920x1080 for web/README use."
+  }
+}

@@ -11,11 +11,30 @@ This demo comes with a notebook (`01-agentic-ai-foundation/epower_hol_main.ipynb
 
 The result: a fully functional **EPOWER Intelligence Agent** that delivers deep insights and task-oriented outcomes — from natural language questions to precise, data-grounded answers across sales, billing, service, HR, and real-time VPP analytics.
 
-> **New to the demo?** Start with `demo_flow.md` for a guided walkthrough with ready-to-use questions.
+---
+
+## What You'll Build
+
+This hands-on lab demonstrates how Snowflake's AI and Data Platform delivers business value through an **intelligent agent** that makes enterprise data accessible via natural language — no dashboards to build, no reports to maintain, no SQL to write.
+
+The EPOWER Agent answers questions across 6 business domains (Sales, Billing, Service, HR, VPP IoT, Market Prices) by combining structured analytics (text-to-SQL via Semantic Views) with document retrieval (RAG via Cortex Search) in a single conversational interface.
+
+| Module | What You Build | Key Snowflake Features | Time |
+|--------|---------------|----------------------|------|
+| **1. Agentic AI Foundation** (required) | Intelligence Agent with 12 tools spanning 6 business domains | Cortex Agent, Semantic Views, Cortex Search, dbt, Tasks, External Access | ~15 min |
+| **2. Postgres Zero-ETL** (optional) | Zero-ETL pipeline from operational Postgres to analytics | Snowflake Postgres, pg_lake, Iceberg, Catalog Integration | ~10 min |
+| **3. dbt with Cortex Code** (optional) | AI-assisted dbt pipeline extension (churn + NPS analytics) | Cortex Code (CoCo), dbt project extension | ~15 min |
+| **4. Agent REST App** (optional) | Streamlit dashboard with streaming Agent REST API chat | Container Runtime (SPCS), Cortex Agent REST API, SSE | ~5 min |
+
+> **Module 1 is the foundation.** Modules 2-4 are independent extensions — run any combination after Module 1.
+
+> **New to the demo?** Start with [`demo_flow.md`](demo_flow.md) for a guided walkthrough with ready-to-use questions.
 
 ---
 
-## Required Privileges
+## Quick Start
+
+### Required Privileges
 
 The setup notebook (`01-agentic-ai-foundation/epower_hol_main.ipynb`) requires elevated privileges for three specific cells (§1, §2, §10). The following account-level privileges are needed — all are inherited by default through the **ACCOUNTADMIN** role:
 
@@ -29,10 +48,6 @@ The setup notebook (`01-agentic-ai-foundation/epower_hol_main.ipynb`) requires e
 | `MODIFY` on Snowflake Intelligence object | Register the agent with Snowflake Intelligence | §10 |
 
 > **If you cannot use ACCOUNTADMIN:** Ask your account administrator to grant these specific privileges to your role, or have them run the three marked cells on your behalf. All other cells run under `EPOWER_ROLE` with no elevated access.
-
----
-
-## Installation Instructions
 
 ### Step 0: Fork the Repository (Optional)
 
@@ -87,20 +102,7 @@ The notebook creates all database objects, loads data, deploys the dbt project, 
 
 ### Step 4: Run the Demo
 
-Use `demo_flow.md` as your guided demo script (12 questions, 4 acts).
-
-### Removing the Demo
-
-To completely remove all demo objects from your account, run the cleanup script:
-
-```sql
--- Run 01-agentic-ai-foundation/epower_cleanup.sql
--- This will:
---   1. Remove the agent from Snowflake Intelligence
---   2. Drop all integrations, the database, warehouse, and role
-```
-
-See [`01-agentic-ai-foundation/epower_cleanup.sql`](01-agentic-ai-foundation/epower_cleanup.sql) for the full teardown script.
+Use [`demo_flow.md`](demo_flow.md) as your guided demo script (12 questions, 4 acts).
 
 ---
 
@@ -402,30 +404,6 @@ Transforms IoT telemetry from ~4,500 battery storage devices into VPP capacity a
 
 Together they provide both the **operational** view (capacity, grid stability) and the **commercial** view (revenue, margins) of the virtual power plant program.
 
-#### Sign Conventions (Positive vs. Negative Values)
-
-| Field | Positive | Negative |
-|-------|----------|----------|
-| `grid_import_export_kw` | Importing from grid (consuming) | Exporting to grid (feeding back) |
-| `net_grid_kw` | Region is net-consuming | Region is net-injecting (VPP supplying power) |
-| `price_eur_mwh` | Normal market price | Oversupply — producers pay you to take electricity |
-| `net_margin_eur` | Profit (export revenue > import cost) | Loss (import cost > export revenue) |
-
-The VPP strategy: charge when prices are negative/low, discharge when prices are high → maximizing positive `net_margin_eur`.
-
-#### Smart Battery Strategy (Price-Reactive VPP)
-
-EPOWER's VPP uses a **price-reactive battery strategy** that correlates battery charge/discharge cycles with real day-ahead electricity prices from the German DE-LU bidding zone. The core idea: buy electricity when it's cheap (or even negatively priced), store it, and sell it back to the grid when prices are high.
-
-| Price Zone | Threshold | Battery Action | Grid Flow | SOC Target |
-|-----------|-----------|---------------|-----------|------------|
-| **Negative** | < €0/MWh | Max Charge | Import +3.5 to +5 kW | 85–95% |
-| **Low** | < P25 (~€88/MWh) | Charge | Import +2 to +4.5 kW | 70–92% |
-| **Medium** | P25–P75 | Self-Consume | Small ±1.5 kW | 40–70% |
-| **High** | > P75 (~€144/MWh) | Discharge | Export -2 to -5 kW | 12–35% |
-
-**Revenue Model:** The arbitrage margin (buying cheap, selling expensive) is split **70% customer / 30% EPOWER**, following industry-standard VPP aggregator economics. The `mart_vpp_price_optimization` dbt model calculates per-device, per-hour margins including import costs, export revenue, and the customer/EPOWER split.
-
 #### 2. Energy Market Data Pipeline (`energy_market_data/`)
 
 Transforms raw day-ahead electricity prices from the Energy-Charts API into analytics-ready time series.
@@ -585,6 +563,36 @@ GRANT USAGE ON MCP SERVER EPOWER_DEMO.EPOWER_GOLD.EPOWER_MCP_SERVER TO ROLE EPOW
 
 ---
 
+## Cleanup
+
+**Full cleanup (removes everything):**
+
+Run [`01-agentic-ai-foundation/epower_cleanup.sql`](01-agentic-ai-foundation/epower_cleanup.sql) with ACCOUNTADMIN. This handles all modules — including Module 2's Postgres instance and network policy — in the correct dependency order:
+
+1. Remove the agent from Snowflake Intelligence
+2. Detach network policy from Postgres instance (Module 2)
+3. Drop Postgres instance (Module 2)
+4. Drop network policy and network rule (Module 2)
+5. Drop catalog and API integrations
+6. Drop the `EPOWER_DEMO` database (all schemas, tables, views, stages)
+7. Drop the `EPOWER_COMPUTE` warehouse
+8. Drop `EPOWER_ROLE`
+
+**Per-module cleanup (selective):**
+
+If you only want to undo a specific module while keeping others intact:
+
+| Module | Cleanup | Notes |
+|--------|---------|-------|
+| Module 4 | Drop the STREAMLIT object in Snowsight (or `DROP STREAMLIT IF EXISTS EPOWER_DEMO.EPOWER_GOLD.EPOWER_ASSISTANT`) | No other objects to clean up |
+| Module 3 | [`03-dbt-with-cortex-code/cleanup-module3.sql`](03-dbt-with-cortex-code/cleanup-module3.sql) | Drops tables, dbt models, semantic view, removes agent tool |
+| Module 2 | [`02-postgres-zero-etl/cleanup-module2.ipynb`](02-postgres-zero-etl/cleanup-module2.ipynb) | **Must follow dependency order** — see [Module 2 README](02-postgres-zero-etl/README-module2.md#cleanup) |
+| Module 1 | [`01-agentic-ai-foundation/epower_cleanup.sql`](01-agentic-ai-foundation/epower_cleanup.sql) | Full teardown — drops everything |
+
+> **Important:** If Module 2 was deployed, its network policy must be detached from the Postgres instance before it can be dropped. The full cleanup script handles this automatically. If running per-module cleanup, run Module 2's cleanup **before** Module 1's.
+
+---
+
 ## Repository Structure
 
 ```
@@ -612,7 +620,7 @@ Snowflake_EPOWER_HOL/
 │   └── cleanup-module3.sql          # Module 3 teardown
 │
 ├── 04-agent-rest-app/               # ── Module 4: Streamlit Agent Dashboard ──
-│   ├── README.md                    # Module 4 documentation
+│   ├── README-module4.md            # Module 4 documentation
 │   ├── streamlit_app.py             # Dashboard + Agent Chat (container runtime)
 │   ├── snowflake.yml                # Deployment config (SPCS)
 │   └── .streamlit/config.toml       # Theme
@@ -700,6 +708,36 @@ Snowflake_EPOWER_HOL/
 | `epower_dbt/` | dbt project with 6 models (medallion architecture) | Deployed by the notebook; edit models here |
 | `demo_data/structured_data/` | 25 CSV files loaded into EPOWER_GOLD | Source data — regenerate with `generators/generate_data.py` |
 | `demo_data/unstructured_data/` | 14 PDF/MD documents for RAG search | Source docs — regenerate with `generators/generate_docs.py` |
+
+---
+
+---
+
+## Appendix: VPP Technical Reference
+
+### Sign Conventions (Positive vs. Negative Values)
+
+| Field | Positive | Negative |
+|-------|----------|----------|
+| `grid_import_export_kw` | Importing from grid (consuming) | Exporting to grid (feeding back) |
+| `net_grid_kw` | Region is net-consuming | Region is net-injecting (VPP supplying power) |
+| `price_eur_mwh` | Normal market price | Oversupply — producers pay you to take electricity |
+| `net_margin_eur` | Profit (export revenue > import cost) | Loss (import cost > export revenue) |
+
+The VPP strategy: charge when prices are negative/low, discharge when prices are high → maximizing positive `net_margin_eur`.
+
+### Smart Battery Strategy (Price-Reactive VPP)
+
+EPOWER's VPP uses a **price-reactive battery strategy** that correlates battery charge/discharge cycles with real day-ahead electricity prices from the German DE-LU bidding zone. The core idea: buy electricity when it's cheap (or even negatively priced), store it, and sell it back to the grid when prices are high.
+
+| Price Zone | Threshold | Battery Action | Grid Flow | SOC Target |
+|-----------|-----------|---------------|-----------|------------|
+| **Negative** | < €0/MWh | Max Charge | Import +3.5 to +5 kW | 85–95% |
+| **Low** | < P25 (~€88/MWh) | Charge | Import +2 to +4.5 kW | 70–92% |
+| **Medium** | P25–P75 | Self-Consume | Small ±1.5 kW | 40–70% |
+| **High** | > P75 (~€144/MWh) | Discharge | Export -2 to -5 kW | 12–35% |
+
+**Revenue Model:** The arbitrage margin (buying cheap, selling expensive) is split **70% customer / 30% EPOWER**, following industry-standard VPP aggregator economics. The `mart_vpp_price_optimization` dbt model calculates per-device, per-hour margins including import costs, export revenue, and the customer/EPOWER split.
 
 ---
 

@@ -204,6 +204,22 @@ inspect the current agent definition with DESCRIBE AGENT.
 
 ---
 
+## Cleanup
+
+Run [`cleanup-module3.sql`](cleanup-module3.sql) in Snowsight (with `EPOWER_ROLE`) to remove all Module 3 objects:
+
+- Source tables in `EPOWER_BRONZE`: `CONTRACT_CANCELLATIONS`, `CUSTOMER_SURVEYS`
+- dbt-generated staging models in `EPOWER_SILVER` (e.g., `stg_cancellations`, `stg_surveys`)
+- dbt-generated mart tables in `EPOWER_GOLD` (e.g., `mart_customer_churn`, `mart_nps_analysis`, `mart_customer_health`)
+- Semantic view: `CUSTOMER_HEALTH_SEMANTIC_VIEW`
+- Agent tool: `customer_health_analyst` (removed via `ALTER AGENT ... DROP TOOL`)
+
+> **Note:** The exact objects depend on what Cortex Code generated during §5-§7. The cleanup script uses `IF EXISTS` so it is safe to run even if CoCo chose different model names.
+
+After cleanup, the agent is restored to its Module 2 state (with `portal_analyst`) or Module 1 state (without it, if Module 2 was not deployed).
+
+---
+
 ## Relationship to Other Modules
 
 | | Module 1 (01-agentic-ai-foundation) | Module 2 (02-postgres-zero-etl) | Module 3 (03-dbt-with-cortex-code) |

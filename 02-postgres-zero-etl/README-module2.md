@@ -315,6 +315,45 @@ The notebook creates the Postgres instance, seeds data, sets up pg_lake replicat
 
 ---
 
+## Cleanup
+
+Module 2 has **dependency constraints** that require a specific cleanup order. A network policy attached to a Postgres instance cannot be dropped until it is explicitly detached.
+
+**Option A: Use the cleanup notebook** (recommended)
+
+1. Run Postgres cleanup first (in psql):
+   ```bash
+   psql service=my_epower_portal -f cleanup-module2-postgres.sql
+   ```
+2. Open `cleanup-module2.ipynb` in the Workspace and run all cells
+
+**Option B: Use the SQL script**
+
+1. Run `cleanup-module2-postgres.sql` in psql
+2. Run `cleanup-module2-snowflake.sql` in Snowsight (requires ACCOUNTADMIN)
+
+**Dependency order (critical):**
+
+| Step | Action | Why |
+|------|--------|-----|
+| 1 | Drop data objects (Iceberg table, mart table, semantic view, stage) | No dependencies — safe to drop first |
+| 2 | Drop catalog integration | References the Postgres instance |
+| 3 | Detach network policy: `ALTER POSTGRES INSTANCE MY_EPOWER_PORTAL UNSET NETWORK_POLICY` | **Must happen before step 5** |
+| 4 | Drop Postgres instance | Irreversible — all Postgres data is deleted |
+| 5 | Drop network policy and network rule | Only works after detaching in step 3 |
+| 6 | Restore agent to Module 1 state | Removes `portal_analyst` tool |
+
+> **Common error:** `"Policy EPOWER_PG_POLICY cannot be dropped as it is associated with one or more entities"` — you need to detach the policy from the Postgres instance first (step 3). The cleanup notebook handles this automatically with an exception-safe `BEGIN...END` block.
+
+**Post-cleanup:** Also remove the psql connection configuration:
+
+```bash
+# Remove from ~/.pg_service.conf: the [my_epower_portal] section
+# Remove from ~/.pgpass: the corresponding line
+```
+
+---
+
 ## References
 
 - [Introducing pg_lake](https://www.snowflake.com/en/engineering-blog/pg-lake-postgres-lakehouse-integration/) — Snowflake Engineering Blog
