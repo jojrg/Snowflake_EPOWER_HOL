@@ -243,113 +243,133 @@ with tab_chat:
     # Phase 2: Process the pending request (user message is now visible)
     if st.session_state._processing:
         with st.chat_message("assistant"):
-            with st.spinner("Agent is thinking..."):
-                try:
-                    # Create thread on first message
-                    if st.session_state.thread_id is None:
-                        st.session_state.thread_id = create_thread()
-                        st.session_state.parent_message_id = 0
+            try:
+                # Create thread on first message
+                if st.session_state.thread_id is None:
+                    st.session_state.thread_id = create_thread()
+                    st.session_state.parent_message_id = 0
 
-                    # Build request — only send the latest user message (thread has history)
-                    latest_user_msg = st.session_state.chat_messages[-1]["content"]
-                    request_body = {
-                        "thread_id": st.session_state.thread_id,
-                        "parent_message_id": st.session_state.parent_message_id,
-                        "messages": [
-                            {"role": "user", "content": [{"type": "text", "text": latest_user_msg}]}
-                        ],
-                        "stream": True,
-                    }
-                    st.session_state.last_request = {
-                        "method": "POST",
-                        "url": AGENT_PATH,
-                        "body": request_body,
-                    }
+                # Build request — only send the latest user message (thread has history)
+                latest_user_msg = st.session_state.chat_messages[-1]["content"]
+                request_body = {
+                    "thread_id": st.session_state.thread_id,
+                    "parent_message_id": st.session_state.parent_message_id,
+                    "messages": [
+                        {"role": "user", "content": [{"type": "text", "text": latest_user_msg}]}
+                    ],
+                    "stream": True,
+                }
+                st.session_state.last_request = {
+                    "method": "POST",
+                    "url": AGENT_PATH,
+                    "body": request_body,
+                }
 
-                    headers = get_headers()
-                    headers["Accept"] = "text/event-stream"
-                    response = requests.post(AGENT_URL, headers=headers, json=request_body, stream=True)
-                    response.raise_for_status()
+                headers = get_headers()
+                headers["Accept"] = "text/event-stream"
+                response = requests.post(AGENT_URL, headers=headers, json=request_body, stream=True)
+                response.raise_for_status()
 
-                    collected_text = []
-                    collected_tables = []
-                    collected_charts = []
-                    raw_events = []
-                    assistant_message_id = None
+                # Streaming placeholder for real-time text output
+                text_placeholder = st.empty()
+                text_placeholder.markdown("*Thinking...*")
+                streamed_text = ""
+                collected_tables = []
+                collected_charts = []
+                raw_events = []
+                assistant_message_id = None
 
-                    for line in response.iter_lines(decode_unicode=True):
-                        if not line or not line.startswith("data: "):
-                            continue
-                        payload = line[6:]
-                        if payload.strip() == "[DONE]":
-                            break
-                        try:
-                            event = json.loads(payload)
-                            raw_events.append(event)
-                        except json.JSONDecodeError:
-                            continue
-
-                        # Capture metadata for thread continuation
-                        if "metadata" in event:
-                            meta = event["metadata"]
-                            if meta.get("role") == "assistant" and "message_id" in meta:
-                                assistant_message_id = meta["message_id"]
-
-                        # Final completed event
-                        if event.get("status") == "completed" and "content" in event:
-                            # Extract assistant_message_id from metadata
-                            evt_meta = event.get("metadata", {})
-                            if evt_meta.get("assistant_message_id"):
-                                assistant_message_id = evt_meta["assistant_message_id"]
-
-                            for content_item in event["content"]:
-                                ctype = content_item.get("type", "")
-                                if ctype == "text":
-                                    text_val = content_item.get("text", "").strip()
-                                    if text_val:
-                                        collected_text = [text_val]
-                                elif ctype == "table":
-                                    table = content_item.get("table", {})
-                                    rs = table.get("result_set", {})
-                                    meta_rs = rs.get("resultSetMetaData", {})
-                                    cols = [r["name"] for r in meta_rs.get("rowType", [])]
-                                    data = rs.get("data", [])
-                                    if cols and data:
-                                        collected_tables.append({"title": table.get("title", ""), "columns": cols, "data": data})
-                                elif ctype == "chart":
-                                    spec = content_item.get("chart", {}).get("chart_spec", "")
-                                    if spec:
-                                        try:
-                                            collected_charts.append(json.loads(spec))
-                                        except json.JSONDecodeError:
-                                            pass
-                            continue
-
-                    # Update parent_message_id for next turn
-                    if assistant_message_id:
-                        st.session_state.parent_message_id = assistant_message_id
-
-                    final_text = "".join(collected_text) or "No response."
-                    # Fix mojibake: agent returns UTF-8 bytes misinterpreted as latin-1
+                for line in response.iter_lines(decode_unicode=True):
+                    if not line or not line.startswith("data: "):
+                        continue
+                    payload = line[6:]
+                    if payload.strip() == "[DONE]":
+                        break
                     try:
-                        final_text = final_text.encode("latin-1").decode("utf-8")
-                    except (UnicodeDecodeError, UnicodeEncodeError):
-                        pass
+                        event = json.loads(payload)
+                        raw_events.append(event)
+                    except json.JSONDecodeError:
+                        continue
 
-                    st.session_state.chat_messages.append({
-                        "role": "assistant",
-                        "content": final_text,
-                        "tables": collected_tables,
-                        "charts": collected_charts,
-                    })
-                    st.session_state.last_response_raw = raw_events
+                    # Capture metadata for thread continuation
+                    if "metadata" in event:
+                        meta = event["metadata"]
+                        if meta.get("role") == "assistant" and "message_id" in meta:
+                            assistant_message_id = meta["message_id"]
 
-                except Exception as e:
-                    st.session_state.chat_messages.append({
-                        "role": "assistant",
-                        "content": f"Error: {str(e)}",
-                    })
-                    st.session_state.last_response_raw = {"error": str(e)}
+                    # Stream incremental text tokens (content_index >= 2 = answer text)
+                    if "text" in event and event.get("content_index", 0) >= 2:
+                        streamed_text += event["text"]
+                        # Fix mojibake on-the-fly
+                        try:
+                            display_text = streamed_text.encode("latin-1").decode("utf-8")
+                        except (UnicodeDecodeError, UnicodeEncodeError):
+                            display_text = streamed_text
+                        text_placeholder.markdown(display_text + "▌")
+
+                    # Final completed event — extract tables, charts, and final text
+                    if event.get("status") == "completed" and "content" in event:
+                        evt_meta = event.get("metadata", {})
+                        if evt_meta.get("assistant_message_id"):
+                            assistant_message_id = evt_meta["assistant_message_id"]
+
+                        for content_item in event["content"]:
+                            ctype = content_item.get("type", "")
+                            if ctype == "text":
+                                text_val = content_item.get("text", "").strip()
+                                if text_val:
+                                    streamed_text = text_val
+                            elif ctype == "table":
+                                table = content_item.get("table", {})
+                                rs = table.get("result_set", {})
+                                meta_rs = rs.get("resultSetMetaData", {})
+                                cols = [r["name"] for r in meta_rs.get("rowType", [])]
+                                data = rs.get("data", [])
+                                if cols and data:
+                                    collected_tables.append({"title": table.get("title", ""), "columns": cols, "data": data})
+                            elif ctype == "chart":
+                                spec = content_item.get("chart", {}).get("chart_spec", "")
+                                if spec:
+                                    try:
+                                        collected_charts.append(json.loads(spec))
+                                    except json.JSONDecodeError:
+                                        pass
+
+                # Update parent_message_id for next turn
+                if assistant_message_id:
+                    st.session_state.parent_message_id = assistant_message_id
+
+                # Final render — remove cursor and show complete text
+                final_text = streamed_text or "No response."
+                try:
+                    final_text = final_text.encode("latin-1").decode("utf-8")
+                except (UnicodeDecodeError, UnicodeEncodeError):
+                    pass
+                text_placeholder.markdown(final_text)
+
+                # Render tables and charts below the text
+                for tbl in collected_tables:
+                    if tbl["title"]:
+                        st.caption(tbl["title"])
+                    df = pd.DataFrame(tbl["data"], columns=tbl["columns"])
+                    st.dataframe(df, use_container_width=True)
+                for chart_spec in collected_charts:
+                    st.vega_lite_chart(chart_spec, use_container_width=True)
+
+                st.session_state.chat_messages.append({
+                    "role": "assistant",
+                    "content": final_text,
+                    "tables": collected_tables,
+                    "charts": collected_charts,
+                })
+                st.session_state.last_response_raw = raw_events
+
+            except Exception as e:
+                st.session_state.chat_messages.append({
+                    "role": "assistant",
+                    "content": f"Error: {str(e)}",
+                })
+                st.session_state.last_response_raw = {"error": str(e)}
 
         st.session_state._processing = False
         st.rerun()
