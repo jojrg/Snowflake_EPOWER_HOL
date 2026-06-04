@@ -186,7 +186,7 @@ inspect the current agent definition with DESCRIBE AGENT.
 ## Prerequisites
 
 - Module 1 (`01-agentic-ai-foundation/epower_hol_main.ipynb`) must be fully deployed
-- The `epower_dbt` project must exist in the **EPOWER_Demo** workspace
+- The `epower_dbt` project must exist in your Snowsight workspace
 - `EPOWER_ROLE` with appropriate privileges (inherited from Module 1 setup)
 
 ---
