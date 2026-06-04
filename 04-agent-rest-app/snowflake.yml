@@ -1,0 +1,12 @@
+definition_version: 2
+entities:
+  epower_assistant:
+    type: streamlit
+    identifier: EPOWER_ASSISTANT
+    query_warehouse: EPOWER_COMPUTE
+    compute_pool: SYSTEM_COMPUTE_POOL_CPU
+    runtime_name: SYSTEM$ST_CONTAINER_RUNTIME_PY3_11
+    main_file: streamlit_app.py
+    artifacts:
+      - streamlit_app.py
+      - .streamlit/config.toml

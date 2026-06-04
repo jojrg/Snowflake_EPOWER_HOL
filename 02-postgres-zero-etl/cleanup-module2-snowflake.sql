@@ -2,34 +2,57 @@
 -- Module 2 Cleanup: Snowflake Side
 -- Run this AFTER the Postgres cleanup (cleanup-module2-postgres.sql).
 -- Requires ACCOUNTADMIN role.
+--
+-- DEPENDENCY ORDER (important!):
+--   1. Drop data objects (Iceberg table, views, semantic view, stage)
+--   2. Drop catalog integration
+--   3. Detach network policy from Postgres instance
+--   4. Drop Postgres instance
+--   5. Drop network policy and network rule
+--   6. Restore agent to Module 1 state
 -- ========================================================================
 
 USE ROLE ACCOUNTADMIN;
 
--- Drop Iceberg table (Snowflake side)
+-- ========================================================================
+-- STEP 1: Drop data objects
+-- ========================================================================
 DROP ICEBERG TABLE IF EXISTS EPOWER_DEMO.EPOWER_BRONZE.PORTAL_ACTIVITY_LOG;
-
--- Drop analytics view
-DROP VIEW IF EXISTS EPOWER_DEMO.EPOWER_GOLD.MART_PORTAL_ENGAGEMENT;
-
--- Drop semantic view
+DROP TABLE IF EXISTS EPOWER_DEMO.EPOWER_GOLD.MART_PORTAL_ENGAGEMENT;
 DROP SEMANTIC VIEW IF EXISTS EPOWER_DEMO.EPOWER_GOLD.PORTAL_SEMANTIC_VIEW;
-
--- Drop seed data stage
 DROP STAGE IF EXISTS EPOWER_DEMO.EPOWER_GOLD.PORTAL_SEED_STAGE;
 
--- Drop catalog integration
+-- ========================================================================
+-- STEP 2: Drop catalog integration
+-- ========================================================================
 DROP CATALOG INTEGRATION IF EXISTS PORTAL_POSTGRES_CATALOG;
 
--- Drop network objects
+-- ========================================================================
+-- STEP 3: Detach network policy from Postgres instance
+-- (Must happen BEFORE dropping the policy — a policy cannot be dropped
+--  while it is still assigned to an entity)
+-- ========================================================================
+BEGIN
+    ALTER POSTGRES INSTANCE MY_EPOWER_PORTAL UNSET NETWORK_POLICY;
+EXCEPTION
+    WHEN OTHER THEN NULL;  -- Instance may not exist
+END;
+
+-- ========================================================================
+-- STEP 4: Drop Postgres instance (irreversible)
+-- ========================================================================
+DROP POSTGRES INSTANCE IF EXISTS MY_EPOWER_PORTAL;
+
+-- ========================================================================
+-- STEP 5: Drop network policy and rule
+-- (Now safe — policy is no longer attached to any entity)
+-- ========================================================================
 DROP NETWORK POLICY IF EXISTS EPOWER_PG_POLICY;
 DROP NETWORK RULE IF EXISTS EPOWER_PG_INGRESS;
 
--- Drop Postgres instance (this is irreversible)
-DROP POSTGRES INSTANCE IF EXISTS MY_EPOWER_PORTAL;
-
--- Recreate the EPOWER Agent WITHOUT the portal_analyst tool
--- (restores Module 1 agent definition)
+-- ========================================================================
+-- STEP 6: Restore agent to Module 1 state (without portal_analyst)
+-- ========================================================================
 USE ROLE EPOWER_ROLE;
 USE WAREHOUSE EPOWER_COMPUTE;
 
@@ -67,13 +90,13 @@ tools:
   - tool_spec: {type: cortex_search, name: service_logs_search, description: "Historical tickets"}
   - tool_spec: {type: data_to_chart, name: data_to_chart, description: "Generate visualizations"}
 tool_resources:
-  energy_sales_analyst: {semantic_view: "EPOWER_DEMO.EPOWER_GOLD.ENERGY_SALES_SEMANTIC_VIEW"}
-  billing_analyst: {semantic_view: "EPOWER_DEMO.EPOWER_GOLD.BILLING_SEMANTIC_VIEW"}
-  customer_energy_analyst: {semantic_view: "EPOWER_DEMO.EPOWER_GOLD.CUSTOMER_ENERGY_SEMANTIC_VIEW"}
-  service_analyst: {semantic_view: "EPOWER_DEMO.EPOWER_GOLD.SERVICE_SEMANTIC_VIEW"}
-  hr_analyst: {semantic_view: "EPOWER_DEMO.EPOWER_GOLD.HR_SEMANTIC_VIEW"}
-  market_prices_analyst: {semantic_view: "EPOWER_DEMO.EPOWER_GOLD.MARKET_PRICES_SEMANTIC_VIEW"}
-  vpp_telemetry_analyst: {semantic_view: "EPOWER_DEMO.EPOWER_GOLD.EPULSE_VPP_SEMANTIC_VIEW"}
+  energy_sales_analyst: {semantic_view: "EPOWER_DEMO.EPOWER_GOLD.ENERGY_SALES_SEMANTIC_VIEW", execution_environment: {type: warehouse, warehouse: EPOWER_COMPUTE}}
+  billing_analyst: {semantic_view: "EPOWER_DEMO.EPOWER_GOLD.BILLING_SEMANTIC_VIEW", execution_environment: {type: warehouse, warehouse: EPOWER_COMPUTE}}
+  customer_energy_analyst: {semantic_view: "EPOWER_DEMO.EPOWER_GOLD.CUSTOMER_ENERGY_SEMANTIC_VIEW", execution_environment: {type: warehouse, warehouse: EPOWER_COMPUTE}}
+  service_analyst: {semantic_view: "EPOWER_DEMO.EPOWER_GOLD.SERVICE_SEMANTIC_VIEW", execution_environment: {type: warehouse, warehouse: EPOWER_COMPUTE}}
+  hr_analyst: {semantic_view: "EPOWER_DEMO.EPOWER_GOLD.HR_SEMANTIC_VIEW", execution_environment: {type: warehouse, warehouse: EPOWER_COMPUTE}}
+  market_prices_analyst: {semantic_view: "EPOWER_DEMO.EPOWER_GOLD.MARKET_PRICES_SEMANTIC_VIEW", execution_environment: {type: warehouse, warehouse: EPOWER_COMPUTE}}
+  vpp_telemetry_analyst: {semantic_view: "EPOWER_DEMO.EPOWER_GOLD.EPULSE_VPP_SEMANTIC_VIEW", execution_environment: {type: warehouse, warehouse: EPOWER_COMPUTE}}
   energy_docs_search: {search_service: "EPOWER_DEMO.EPOWER_GOLD.SEARCH_ENERGY_DOCS", max_results: 5}
   product_docs_search: {search_service: "EPOWER_DEMO.EPOWER_GOLD.SEARCH_PRODUCT_DOCS", max_results: 5}
   service_docs_search: {search_service: "EPOWER_DEMO.EPOWER_GOLD.SEARCH_SERVICE_DOCS", max_results: 5}

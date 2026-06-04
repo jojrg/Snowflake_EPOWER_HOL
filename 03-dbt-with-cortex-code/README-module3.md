@@ -46,7 +46,7 @@ Both join naturally with the existing `customer_dim` and `product_dim` — enabl
                                                  └───────────►  mart_customer_health
 ```
 
-> **Note:** The exact model names and structure may vary depending on what CoCo generates. The above is one expected solution — see `reference/` for the full implementation.
+> **Note:** The exact model names and structure may vary depending on what CoCo generates. The above is one expected solution.
 
 ---
 
@@ -128,11 +128,6 @@ NPS scores 0-10 across 6 survey categories with German-language comments.
 |------|---------|
 | `hol-module3.ipynb` | Snowsight notebook — the main deliverable |
 | `cleanup-module3.sql` | Teardown script to remove Module 3 objects |
-| `reference/` | Expected CoCo outputs (safety net for presenters) |
-| `reference/models/` | dbt staging + mart models |
-| `reference/config_updates.txt` | sources.yml + dbt_project.yml changes |
-| `reference/semantic_view.sql` | Semantic View SQL |
-| `reference/agent_definition.sql` | Agent definition with all tools |
 
 ---
 
@@ -190,15 +185,15 @@ inspect the current agent definition with DESCRIBE AGENT.
 
 ## Prerequisites
 
-- Module 1 (`hol-main/epower_hol_main.ipynb`) must be fully deployed
-- The `epower_dbt` project must exist in the **EPOWER_Demo** workspace
+- Module 1 (`01-agentic-ai-foundation/epower_hol_main.ipynb`) must be fully deployed
+- The `epower_dbt` project must exist in your Snowsight workspace
 - `EPOWER_ROLE` with appropriate privileges (inherited from Module 1 setup)
 
 ---
 
 ## How to Run
 
-1. Open `hol-module3/hol-module3.ipynb` in the Snowflake Workspace
+1. Open `03-dbt-with-cortex-code/hol-module3.ipynb` in the Snowflake Workspace
 2. Select the `EPOWER_COMPUTE` warehouse
 3. Run §1-§4 to load and explore the new data
 4. Follow the CoCo prompts in §5 (in the Snowsight Cortex Code panel)
@@ -209,9 +204,25 @@ inspect the current agent definition with DESCRIBE AGENT.
 
 ---
 
+## Cleanup
+
+Run [`cleanup-module3.sql`](cleanup-module3.sql) in Snowsight (with `EPOWER_ROLE`) to remove all Module 3 objects:
+
+- Source tables in `EPOWER_BRONZE`: `CONTRACT_CANCELLATIONS`, `CUSTOMER_SURVEYS`
+- dbt-generated staging models in `EPOWER_SILVER` (e.g., `stg_cancellations`, `stg_surveys`)
+- dbt-generated mart tables in `EPOWER_GOLD` (e.g., `mart_customer_churn`, `mart_nps_analysis`, `mart_customer_health`)
+- Semantic view: `CUSTOMER_HEALTH_SEMANTIC_VIEW`
+- Agent tool: `customer_health_analyst` (removed via `ALTER AGENT ... DROP TOOL`)
+
+> **Note:** The exact objects depend on what Cortex Code generated during §5-§7. The cleanup script uses `IF EXISTS` so it is safe to run even if CoCo chose different model names.
+
+After cleanup, the agent is restored to its Module 2 state (with `portal_analyst`) or Module 1 state (without it, if Module 2 was not deployed).
+
+---
+
 ## Relationship to Other Modules
 
-| | Module 1 (hol-main) | Module 2 (hol-module2) | Module 3 (hol-module3) |
+| | Module 1 (01-agentic-ai-foundation) | Module 2 (02-postgres-zero-etl) | Module 3 (03-dbt-with-cortex-code) |
 |---|---|---|---|
 | **Focus** | Data engineering + Agentic AI | Operational OLTP + zero-ETL | AI-assisted dbt development |
 | **Key feature** | dbt, Semantic Views, Cortex Agent | Snowflake Postgres, pg_lake | Cortex Code (CoCo) |
