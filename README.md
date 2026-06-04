@@ -71,7 +71,7 @@ DESCRIBE INTEGRATION github_api_integration;
 
 1. Navigate to **Projects » Workspaces** in Snowsight
 2. Click **+ Workspace** → **Create Workspace from Git Repository**
-3. Enter repository URL: `https://github.com/jojrg/Snowflake_EPower_DEMO.git` (or your fork's URL)
+3. Enter repository URL: `[https://github.com/jojrg/Snowflake_EPOWER_HOL](https://github.com/jojrg/Snowflake_EPOWER_HOL)` (or your fork's URL)
 4. Select API integration: `github_api_integration`
 5. Click **Create**
 
