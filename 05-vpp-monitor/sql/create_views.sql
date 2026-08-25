@@ -15,46 +15,94 @@ USE WAREHOUSE EPOWER_COMPUTE;
 USE SCHEMA EPOWER_DEMO.EPOWER_GOLD;
 
 -- -----------------------------------------------------------------------------
+-- 0. VPP_CLUSTER_DIM & CITY_CLUSTER_MAP
+--    VPP_CLUSTER_DIM is already created and loaded in Module 1 (10 columns).
+--    Here we only create the CITY_CLUSTER_MAP that links cities to clusters.
+-- -----------------------------------------------------------------------------
+
+-- City-to-cluster mapping for all 40 cities in MART_VPP_PRICE_OPTIMIZATION
+CREATE OR REPLACE TABLE CITY_CLUSTER_MAP (
+    CITY        VARCHAR(100),
+    REGION      VARCHAR(10),
+    CLUSTER_ID  VARCHAR(20),
+    FOREIGN KEY (CLUSTER_ID) REFERENCES VPP_CLUSTER_DIM(CLUSTER_ID)
+);
+
+INSERT INTO CITY_CLUSTER_MAP (CITY, REGION, CLUSTER_ID) VALUES
+    -- South clusters
+    ('Freiburg',    'South', 'freiburg_oberrhein'),
+    ('Augsburg',    'South', 'bavaria_south'),
+    ('Ingolstadt',  'South', 'bavaria_south'),
+    ('Regensburg',  'South', 'bavaria_south'),
+    ('München',     'South', 'munich_metro'),
+    ('Stuttgart',   'South', 'stuttgart_metro'),
+    ('Karlsruhe',   'South', 'stuttgart_metro'),
+    ('Ulm',         'South', 'stuttgart_metro'),
+    ('Nürnberg',    'South', 'nuernberg_franken'),
+    ('Würzburg',    'South', 'nuernberg_franken'),
+    -- West clusters
+    ('Frankfurt',   'West',  'frankfurt_main'),
+    ('Köln',        'West',  'koeln_bonn'),
+    ('Bonn',        'West',  'koeln_bonn'),
+    ('Aachen',      'West',  'koeln_bonn'),
+    ('Düsseldorf',  'West',  'rhine_ruhr'),
+    ('Dortmund',    'West',  'rhine_ruhr'),
+    ('Essen',       'West',  'rhine_ruhr'),
+    ('Bochum',      'West',  'rhine_ruhr'),
+    ('Duisburg',    'West',  'rhine_ruhr'),
+    ('Wuppertal',   'West',  'rhine_ruhr'),
+    ('Münster',     'West',  'rhine_ruhr'),
+    -- East clusters
+    ('Berlin',      'East',  'berlin_metro'),
+    ('Potsdam',     'East',  'berlin_metro'),
+    ('Cottbus',     'East',  'berlin_metro'),
+    ('Leipzig',     'East',  'leipzig_halle'),
+    ('Halle',       'East',  'leipzig_halle'),
+    ('Jena',        'East',  'leipzig_halle'),
+    ('Erfurt',      'East',  'leipzig_halle'),
+    ('Magdeburg',   'East',  'leipzig_halle'),
+    ('Dresden',     'East',  'saxony_east'),
+    ('Chemnitz',    'East',  'saxony_east'),
+    -- North clusters
+    ('Hamburg',     'North', 'hamburg_metro'),
+    ('Kiel',        'North', 'hamburg_metro'),
+    ('Lübeck',      'North', 'hamburg_metro'),
+    ('Rostock',     'North', 'hamburg_metro'),
+    ('Bremen',      'North', 'bremen_weser'),
+    ('Hannover',    'North', 'lower_saxony'),
+    ('Braunschweig','North', 'lower_saxony'),
+    ('Oldenburg',   'North', 'lower_saxony'),
+    ('Osnabrück',   'North', 'lower_saxony'),
+    ('Wolfsburg',   'North', 'lower_saxony');
+
+-- -----------------------------------------------------------------------------
 -- 1. V_VPP_MONITOR_TIMESERIES
---    Joins hourly VPP capacity with day-ahead prices.
---    Supports both hourly and daily granularity via the consuming query.
+--    Hourly/daily aggregation with cluster support.
+--    Built from price optimization + city-cluster map.
 -- -----------------------------------------------------------------------------
 CREATE OR REPLACE VIEW V_VPP_MONITOR_TIMESERIES AS
 SELECT
-    c.HOUR,
-    c.REGION,
-    c.ACTIVE_VPP_DEVICES,
-    c.TOTAL_BATTERY_SOC,
-    c.AVG_BATTERY_SOC_PCT,
-    c.TOTAL_SOLAR_YIELD_KW,
-    c.AVG_SOLAR_YIELD_KW,
-    c.NET_GRID_KW,
-    p.PRICE_EUR_MWH,
-    p.PRICE_EUR_KWH,
-    p.DAY_OF_WEEK,
-    p.HOUR_OF_DAY
-FROM MART_VPP_CAPACITY_HOURLY c
-LEFT JOIN (
-    -- Day-ahead prices are at 15-min granularity; average to hourly
-    SELECT
-        HOUR,
-        AVG(PRICE_EUR_MWH) AS PRICE_EUR_MWH,
-        AVG(PRICE_EUR_KWH) AS PRICE_EUR_KWH,
-        ANY_VALUE(DAY_OF_WEEK) AS DAY_OF_WEEK,
-        ANY_VALUE(HOUR_OF_DAY) AS HOUR_OF_DAY
-    FROM MART_DAY_AHEAD_PRICES
-    GROUP BY HOUR
-) p ON c.HOUR = p.HOUR;
+    o.HOUR,
+    o.REGION,
+    cm.CLUSTER_ID,
+    COUNT(DISTINCT o.CUSTOMER_KEY)  AS ACTIVE_VPP_DEVICES,
+    ROUND(SUM(o.AVG_BATTERY_SOC_PCT * 1.0) / NULLIF(COUNT(*), 0), 1) AS AVG_BATTERY_SOC_PCT,
+    ROUND(AVG(o.AVG_SOLAR_KW), 2)  AS AVG_SOLAR_YIELD_KW,
+    ROUND(SUM(o.TOTAL_IMPORT_KWH) - SUM(o.TOTAL_EXPORT_KWH), 2) AS NET_GRID_KW,
+    AVG(o.PRICE_EUR_MWH)           AS PRICE_EUR_MWH
+FROM MART_VPP_PRICE_OPTIMIZATION o
+JOIN CITY_CLUSTER_MAP cm ON o.CITY = cm.CITY AND o.REGION = cm.REGION
+GROUP BY o.HOUR, o.REGION, cm.CLUSTER_ID;
 
 -- -----------------------------------------------------------------------------
 -- 2. V_VPP_MONITOR_ACTIONS
---    Aggregates the 23M-row price optimization table by day/region/customer_type.
---    Returns battery action distribution and margin totals.
+--    Battery action distribution and margin totals by day/region/cluster/type.
 -- -----------------------------------------------------------------------------
 CREATE OR REPLACE VIEW V_VPP_MONITOR_ACTIONS AS
 SELECT
     DATE_TRUNC('day', o.HOUR)::DATE AS DAY,
     o.REGION,
+    cm.CLUSTER_ID,
     c.CUSTOMER_TYPE,
     o.BATTERY_ACTION,
     COUNT(*) AS ACTION_COUNT,
@@ -67,18 +115,18 @@ SELECT
     SUM(o.EPOWER_MARGIN_EUR) AS TOTAL_EPOWER_MARGIN_EUR
 FROM MART_VPP_PRICE_OPTIMIZATION o
 JOIN CUSTOMER_DIM c ON o.CUSTOMER_KEY = c.CUSTOMER_KEY
-GROUP BY 1, 2, 3, 4;
+JOIN CITY_CLUSTER_MAP cm ON o.CITY = cm.CITY AND o.REGION = cm.REGION
+GROUP BY 1, 2, 3, 4, 5;
 
 -- -----------------------------------------------------------------------------
 -- 3. V_VPP_MONITOR_KPI
---    Summary KPIs derived from the optimization table (has customer granularity).
---    One row per day/region/customer_type with device counts, SOC, solar, grid,
---    price, and margin aggregates.
+--    Summary KPIs by day/region/cluster/customer_type.
 -- -----------------------------------------------------------------------------
 CREATE OR REPLACE VIEW V_VPP_MONITOR_KPI AS
 SELECT
     DATE_TRUNC('day', o.HOUR)::DATE AS DAY,
     o.REGION,
+    cm.CLUSTER_ID,
     c.CUSTOMER_TYPE,
     COUNT(DISTINCT o.CUSTOMER_KEY) AS ACTIVE_VPP_DEVICES,
     AVG(o.AVG_BATTERY_SOC_PCT) AS AVG_BATTERY_SOC_PCT,
@@ -90,4 +138,28 @@ SELECT
     SUM(o.NET_MARGIN_EUR) AS TOTAL_NET_MARGIN_EUR
 FROM MART_VPP_PRICE_OPTIMIZATION o
 JOIN CUSTOMER_DIM c ON o.CUSTOMER_KEY = c.CUSTOMER_KEY
-GROUP BY 1, 2, 3;
+JOIN CITY_CLUSTER_MAP cm ON o.CITY = cm.CITY AND o.REGION = cm.REGION
+GROUP BY 1, 2, 3, 4;
+
+-- -----------------------------------------------------------------------------
+-- 4. V_VPP_MONITOR_MAP
+--    Hourly cluster-level aggregation for the regional comparison chart.
+--    Built from price optimization + cluster dim for display names.
+-- -----------------------------------------------------------------------------
+CREATE OR REPLACE VIEW V_VPP_MONITOR_MAP AS
+SELECT
+    o.HOUR,
+    cm.CLUSTER_ID,
+    cl.CLUSTER_NAME,
+    cl.COMPASS_REGION,
+    COUNT(DISTINCT o.CUSTOMER_KEY)  AS ACTIVE_DEVICES,
+    ROUND(AVG(o.AVG_BATTERY_SOC_PCT), 1) AS AVG_SOC_PCT,
+    ROUND(AVG(o.AVG_SOLAR_KW), 2)  AS AVG_SOLAR_KW,
+    ROUND(SUM(o.TOTAL_IMPORT_KWH), 1) AS TOTAL_IMPORT_KWH,
+    ROUND(SUM(o.TOTAL_EXPORT_KWH), 1) AS TOTAL_EXPORT_KWH,
+    ROUND(SUM(o.TOTAL_EXPORT_KWH) - SUM(o.TOTAL_IMPORT_KWH), 1) AS NET_FLOW_KWH,
+    ROUND(AVG(o.PRICE_EUR_MWH), 2) AS AVG_PRICE_EUR_MWH
+FROM MART_VPP_PRICE_OPTIMIZATION o
+JOIN CITY_CLUSTER_MAP cm ON o.CITY = cm.CITY AND o.REGION = cm.REGION
+JOIN VPP_CLUSTER_DIM cl ON cm.CLUSTER_ID = cl.CLUSTER_ID
+GROUP BY o.HOUR, cm.CLUSTER_ID, cl.CLUSTER_NAME, cl.COMPASS_REGION;

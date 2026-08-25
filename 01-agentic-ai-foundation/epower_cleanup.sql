@@ -22,11 +22,29 @@ USE ROLE ACCOUNTADMIN;
 USE WAREHOUSE EPOWER_COMPUTE;
 
 -- ========================================================================
--- STEP 1: REMOVE AGENT FROM SNOWFLAKE INTELLIGENCE
+-- STEP 1: REMOVE AGENTS FROM SNOWFLAKE INTELLIGENCE
 -- ========================================================================
 BEGIN
     ALTER SNOWFLAKE INTELLIGENCE snowflake_intelligence_object_default 
         DROP AGENT EPOWER_DEMO.EPOWER_GOLD.EPOWER_AGENT;
+EXCEPTION
+    WHEN OTHER THEN NULL;
+END;
+BEGIN
+    ALTER SNOWFLAKE INTELLIGENCE snowflake_intelligence_object_default 
+        DROP AGENT EPOWER_DEMO.EPOWER_GOLD.EPOWER_OPS_AGENT;
+EXCEPTION
+    WHEN OTHER THEN NULL;
+END;
+BEGIN
+    ALTER SNOWFLAKE INTELLIGENCE snowflake_intelligence_object_default 
+        DROP AGENT EPOWER_DEMO.EPOWER_GOLD.EPOWER_COMMERCIAL_AGENT;
+EXCEPTION
+    WHEN OTHER THEN NULL;
+END;
+BEGIN
+    ALTER SNOWFLAKE INTELLIGENCE snowflake_intelligence_object_default 
+        DROP AGENT EPOWER_DEMO.EPOWER_GOLD.EPOWER_PEOPLE_AGENT;
 EXCEPTION
     WHEN OTHER THEN NULL;
 END;
@@ -98,20 +116,6 @@ ALTER USER IDENTIFIER($current_user_name) SET DEFAULT_ROLE = 'SYSADMIN';
 DROP ROLE IF EXISTS EPOWER_ROLE;
 
 -- ========================================================================
--- VERIFICATION
+-- DONE
 -- ========================================================================
-SHOW DATABASES LIKE 'EPOWER%';
-SHOW WAREHOUSES LIKE 'EPOWER%';
-SHOW ROLES LIKE 'EPOWER%';
-SHOW INTEGRATIONS LIKE '%energy%';
-SHOW INTEGRATIONS LIKE '%PORTAL%';
-SHOW NETWORK POLICIES LIKE 'EPOWER%';
-
--- Module 5 verification (may fail if SNOWFLAKE_APPS database doesn't exist)
-BEGIN
-    SHOW APPLICATION SERVICES LIKE 'EPOWER%' IN SCHEMA SNOWFLAKE_APPS.PUBLIC;
-EXCEPTION
-    WHEN OTHER THEN NULL;
-END;
-
 SELECT 'EPOWER Demo cleanup completed!' AS status;
